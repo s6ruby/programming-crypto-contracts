@@ -84,9 +84,9 @@ pp Uni.accounts      # Uni (short for) Universum
 printing:
 
 ```
-[#<Account:0x4da56e8 @addr="0xaaaa", @balance=1000000>,
- #<Account:0x4da5688 @addr="0xbbbb", @balance=1200000>,
- #<Account:0x4da5628 @addr="0xcccc", @balance=1400000>]
+[#<Account @addr="0xaaaa", @balance=1000000>,
+ #<Account @addr="0xbbbb", @balance=1200000>,
+ #<Account @addr="0xcccc", @balance=1400000>]
 ```
 
 Note: The contract scripts run on Universum - a 3rd generation blockchain / world computer. New to Universum? See the [Universum (World Computer) White Paper](https://github.com/openblockchains/universum/blob/master/WHITEPAPER.md)!
@@ -100,15 +100,15 @@ ponzi = SimplePonzi.new
 
 Uni.send_transaction( from: '0xaaaa', to: ponzi, value: 1_000_000 )
 pp ponzi
-#=> #<SimplePonzi:0x4dcac30 @current_investment=1000000, @current_investor="0xaaaa">
+#=> #<SimplePonzi @current_investment=1000000, @current_investor="0xaaaa">
 
 Uni.send_transaction( from: '0xbbbb', to: ponzi, value: 1_200_000 )
 pp ponzi
-#=> #<SimplePonzi:0x4dcac30 @current_investment=1200000, @current_investor="0xbbbb">
+#=> #<SimplePonzi @current_investment=1200000, @current_investor="0xbbbb">
 
 Uni.send_transaction( from: '0xcccc', to: ponzi, value: 1_400_000 )
 pp ponzi
-#=> #<SimplePonzi:0x4dcac30 @current_investment=1400000, @current_investor="0xcccc">
+#=> #<SimplePonzi @current_investment=1400000, @current_investor="0xcccc">
 
 ## (pp) pretty print all known accounts with balance
 pp Uni.accounts
@@ -117,10 +117,10 @@ pp Uni.accounts
 Resulting in:
 
 ```
-[#<Account:0x4dcaaf8 @addr="0x0000", @balance=1000000>,
- #<Account:0x4dd5778 @addr="0xaaaa", @balance=1200000>,
- #<Account:0x4dd5730 @addr="0xbbbb", @balance=1400000>,
- #<Account:0x4dd56d0 @addr="0xcccc", @balance=0>]
+[#<Account @addr="0x0000", @balance=1000000>,
+ #<Account @addr="0xaaaa", @balance=1200000>,
+ #<Account @addr="0xbbbb", @balance=1400000>,
+ #<Account @addr="0xcccc", @balance=0>]
 ```
 
 The "Genesis" `0x0000` account made a 100% profit of 1_000_000.
@@ -201,10 +201,10 @@ pp Uni.accounts      # Uni (short for) Universum
 printing:
 
 ```
-[#<Account:0x4d94ca8 @addr="0xaaaa", @balance=1000000>,
- #<Account:0x4d94c48 @addr="0xbbbb", @balance=1000000>,
- #<Account:0x4d94be8 @addr="0xcccc", @balance=1000000>,
- #<Account:0x4da4638 @addr="0xdddd", @balance=1000000>]
+[#<Account @addr="0xaaaa", @balance=1000000>,
+ #<Account @addr="0xbbbb", @balance=1000000>,
+ #<Account @addr="0xcccc", @balance=1000000>,
+ #<Account @addr="0xdddd", @balance=1000000>]
 ```
 
 And let's invest:
@@ -214,25 +214,25 @@ ponzi = GradualPonzi.new
 
 Uni.send_transaction( from: '0xaaaa', to: ponzi, value: 1_000_000 )
 pp ponzi
-#=> #<GradualPonzi:0x4d8dfa0
+#=> #<GradualPonzi
 #      @balances={"0x0000"=>1000000},
 #      @investors=["0x0000", "0xaaaa"]>
 
 Uni.send_transaction( from: '0xbbbb', to: ponzi, value: 1_000_000 )
 pp ponzi
-#=> #<GradualPonzi:0x4d8dfa0
+#=> #<GradualPonzi
 #      @balances={"0x0000"=>1500000, "0xaaaa"=>500000},
 #      @investors=["0x0000", "0xaaaa", "0xbbbb"]>
 
 Uni.send_transaction( from: '0xcccc', to: ponzi, value: 1_000_000 )
 pp ponzi
-#=> #<GradualPonzi:0x4d8dfa0
+#=> #<GradualPonzi
 #      @balances={"0x0000"=>1833333, "0xaaaa"=>833333, "0xbbbb"=>333333},
 #      @investors=["0x0000", "0xaaaa", "0xbbbb", "0xcccc"]>
 
 Uni.send_transaction( from: '0xdddd', to: ponzi, value: 1_000_000 )
 pp ponzi
-#=> #<GradualPonzi:0x4dacf60
+#=> #<GradualPonzi
 #      @balances={"0x0000"=>2083333, "0xaaaa"=>1083333,
 #                 "0xbbbb"=>583333,  "0xcccc"=>250000},
 #      @investors=["0x0000", "0xaaaa", "0xbbbb", "0xcccc", "0xdddd"]>
@@ -244,9 +244,10 @@ pp Uni.accounts
 Resulting in:
 
 ```
-[#<Account:0x4d94ca8 @addr="0xaaaa", @balance=0>,
- #<Account:0x4d94c48 @addr="0xbbbb", @balance=0>,
- #<Account:0x4d94be8 @addr="0xcccc", @balance=0>]
+[#<Account @addr="0xaaaa", @balance=0>,
+ #<Account @addr="0xbbbb", @balance=0>,
+ #<Account @addr="0xcccc", @balance=0>,
+ #<Account @addr="0xdddd", @balance=0>]
 ```
 
 Note: All accounts have a balance of 0 because
@@ -265,7 +266,7 @@ Let's withdraw and pocket the profits:
 ``` ruby
 ponzi.send_transaction( :withdraw, from: '0xaaaa' )
 pp ponzi
-#=> #<GradualPonzi:0x4dacf60
+#=> #<GradualPonzi
 #       @balances={"0x0000"=>2083333, "0xaaaa"=>0,
 #                  "0xbbbb"=>583333,  "0xcccc"=>250000},
 #       @investors=["0x0000", "0xaaaa", "0xbbbb", "0xcccc", "0xdddd"]>
@@ -277,10 +278,10 @@ pp Uni.accounts
 resulting in:
 
 ```
-[#<Account:0x4db4868 @addr="0xaaaa", @balance=1083333>,
- #<Account:0x4db47f0 @addr="0xbbbb", @balance=0>,
- #<Account:0x4db4760 @addr="0xcccc", @balance=0>,
- #<Account:0x4db4718 @addr="0xdddd", @balance=0>]
+[#<Account @addr="0xaaaa", @balance=1083333>,
+ #<Account @addr="0xbbbb", @balance=0>,
+ #<Account @addr="0xcccc", @balance=0>,
+ #<Account @addr="0xdddd", @balance=0>]
 ```
 
 Yes, it's real!
