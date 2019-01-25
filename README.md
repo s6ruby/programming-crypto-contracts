@@ -1,11 +1,14 @@
 
 # Programming Crypto Blockchain Contracts Step-by-Step Book / Guide
 
-_Let's Start with Ponzi & Pyramid Schemes. Run Your Own lotteries, Gambling Casinos and more on the Blockchain World Computer..._
+_Let's Start with Ponzi & Pyramid Schemes. Run Your Own Lotteries, Gambling Casinos and more on the Blockchain World Computer..._
 
 
 
 ## Ponzis and Pyramids
+
+
+### Simple Ponzi - Investment of a Lifetime!
 
 Let's start with a simple ponzi scheme contract:
 
@@ -127,6 +130,7 @@ The `0xcccc` account is still waiting for a greater fool and is HODLing the bag.
 To the moon!
 
 
+### Gradual Ponzi - May the Brave be Rewared with Riches!
 
 
 Let's put together a more realistic ponzi
