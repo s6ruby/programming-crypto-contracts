@@ -194,7 +194,7 @@ Account[ '0xbbbb' ].balance = 1_000_000
 Account[ '0xcccc' ].balance = 1_000_000
 Account[ '0xdddd' ].balance = 1_000_000
 
-## (pp) pretty print  all known accounts with balance
+## (pp) pretty print all known accounts with balance
 pp Uni.accounts      # Uni (short for) Universum
 ```
 
@@ -237,7 +237,7 @@ pp ponzi
 #                 "0xbbbb"=>583333,  "0xcccc"=>250000},
 #      @investors=["0x0000", "0xaaaa", "0xbbbb", "0xcccc", "0xdddd"]>
 
-## (pp) pretty print  all known accounts with balance
+## (pp) pretty print all known accounts with balance
 pp Uni.accounts
 ```
 
@@ -271,7 +271,7 @@ pp ponzi
 #                  "0xbbbb"=>583333,  "0xcccc"=>250000},
 #       @investors=["0x0000", "0xaaaa", "0xbbbb", "0xcccc", "0xdddd"]>
 
-## dump (show) all known accounts with balance
+## (pp) pretty print all known accounts with balance
 pp Uni.accounts
 ```
 
