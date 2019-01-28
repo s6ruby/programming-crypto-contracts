@@ -36,7 +36,7 @@ class Governmental < Contract
 
     @creditor_addresses = []    ## type address[] public
     @creditor_amounts   = []    ## type uint[] public
-    @creditors = Hash.new(0)    ## type mapping (address => uint) creditors
+    @buddies = Hash.new(0)      ## type mapping (address => uint) buddies
 
     @round = 0                   ## type uint8 public
     @last_creditor_paid_out = 0  ## type uint32 public
@@ -89,12 +89,12 @@ class Governmental < Contract
 
         ## if you have a buddy in the government (and he is in the creditor list) he can get 5% of your credits.
         ## Make a deal with him.
-        if @creditors[buddy] >= amount
+        if @buddies[buddy] >= amount
           buddy.send( amount * 5/100 )
           paid_out += amount * 5/100   ## fix/todo: track remaining balance "by hand" for now
         end
 
-        @creditors[ msg.sender ] += amount * 110 / 100
+        @buddies[ msg.sender ] += amount * 110 / 100
 
         ## 90% of the money will be used to pay out old creditors
         if @creditor_amounts[ @last_creditor_paid_out] <= (@balance + amount - paid_out) - @profit_from_crash
@@ -102,7 +102,7 @@ class Governmental < Contract
 
           paid_out += @creditor_amounts[@last_creditor_paid_out]   ## fix/todo: track remaining balance "by hand" for now
 
-          @creditors[ @creditor_addresses[ @last_creditor_paid_out ]] = 0
+          @buddies[ @creditor_addresses[ @last_creditor_paid_out ]] = 0
           @last_creditor_paid_out += 1
         end
 
