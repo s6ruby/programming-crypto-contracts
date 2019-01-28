@@ -4,6 +4,19 @@ require 'pp'    ## pretty print (pp)
 
 
 
+def address( o )
+  if o.is_a? Contract
+    ##  fix/todo:  use/lookup proper addr from contract
+    ## construct address for now from object_id
+    "0x#{(o.object_id << 1).to_s(16)}"
+  else
+    raise "Type Conversion to Address Failed; Expected Contract got #{o.inspect}; Contract Halted (Stopped)"
+  end
+end
+
+
+
+
 
 class String
   def send( value )
@@ -80,35 +93,6 @@ end # class Account
 class Contract
   class Event; end   ## base class for events
 
-  ## blockchain message (msg) context
-  ##   includes:  sender (address)
-  ##  todo: allow writable attribues e.g. sender - why? why not?
-  class Msg
-    attr_reader :sender, :value
-
-    def initialize( sender: '0x0000', value: 0 )
-      @sender = sender
-      @value  = value
-    end
-  end  # class Msg
-
-
-
-  def self.msg
-      @@msg ||= Msg.new
-  end
-
-  def self.msg=( value )
-    if value.is_a? Hash
-      kwargs = value
-      @@msg = Msg.new( kwargs )
-    else   ## assume Msg class/type
-      @@msg = value
-    end
-  end
-
-  def msg() self.class.msg; end
-
 
   def self.handlers    ## use listeners/observers/subscribers/... - why? why not?
     @@handlers ||= []
@@ -134,6 +118,12 @@ class Contract
     end
   end
 
+  ## todo/fix: return address - why? why not?
+  def this() self; end
+
+  def msg()   Universum.msg;   end
+  def block() Universum.block; end
+
 
   def destroy( owner )   ## todo/check: use a different name e.g. destruct/ delete - why? why not?
      ## selfdestruct function (for clean-up on blockchain)
@@ -144,7 +134,7 @@ class Contract
   def send_transaction( method, *args, **kwargs )
     if kwargs[:from]
       from = kwargs.delete( :from )
-      self.class.msg = { sender: from }
+      Universum.msg = { sender: from }
     end
 
     ## todo/fix: check arity of method to call to pass along right params - quick and dirty hack/check for now used for kwargs
@@ -161,6 +151,29 @@ end  # class Contract
 
 
 
+## blockchain message (msg) context
+##   includes:  sender (address)
+##  todo: allow writable attribues e.g. sender - why? why not?
+class Msg
+  attr_reader :sender, :value
+
+  def initialize( sender: '0x0000', value: 0 )
+    @sender = sender
+    @value  = value
+  end
+end  # class Msg
+
+
+
+class Block
+  attr_reader :timestamp
+
+  def initialize( timestamp: Time.now.to_i )
+    @timestamp = timestamp   # unix epoch time (in seconds since 1970)
+  end
+end  # class Block
+
+
 
 class Universum   ## Uni short for Universum
   ## convenience helpers
@@ -170,7 +183,7 @@ class Universum   ## Uni short for Universum
     account.balance -= value    ## move value to msg (todo/fix: restore if exception)
 
     ## setup contract msg context
-    Contract.msg = { sender: from, value: value }
+    self.msg = { sender: from, value: value }
 
     to.call()   ## assume call (default method) for now
   end
@@ -179,6 +192,26 @@ class Universum   ## Uni short for Universum
   def self.accounts
     accounts = Account.all
   end
+
+
+  def self.msg
+    @@msg ||= Msg.new
+  end
+
+  def self.msg=( value )
+    if value.is_a? Hash
+      kwargs = value
+      @@msg = Msg.new( kwargs )
+    else   ## assume Msg class/type
+      @@msg = value
+    end
+  end
+
+
+  def self.block
+    @@block ||= Block.new
+  end
+
 end  ## class Universum
 
 Uni = Universum   ## add some convenience aliases (still undecided what's the most popular :-)
