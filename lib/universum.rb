@@ -1,7 +1,11 @@
 ## stdlibs
 require 'pp'    ## pretty print (pp)
+require 'digest'
 
 
+def sha256( str )
+  Digest::SHA256.hexdigest( str )
+end
 
 
 def address( o )
@@ -123,6 +127,10 @@ class Contract
 
   def msg()   Universum.msg;   end
   def block() Universum.block; end
+  def blockhash( number )
+    ## todo/fix: only allow going back 255 blocks; check if number is in range!!!
+    Universum.blockhash( number )
+  end
 
 
   def destroy( owner )   ## todo/check: use a different name e.g. destruct/ delete - why? why not?
@@ -166,10 +174,11 @@ end  # class Msg
 
 
 class Block
-  attr_reader :timestamp
+  attr_reader :timestamp, :number
 
-  def initialize( timestamp: Time.now.to_i )
+  def initialize( timestamp: Time.now.to_i, number: 0 )
     @timestamp = timestamp   # unix epoch time (in seconds since 1970)
+    @number    = number      # block height (start with 0 - genesis block)
   end
 end  # class Block
 
@@ -178,14 +187,21 @@ end  # class Block
 class Universum   ## Uni short for Universum
   ## convenience helpers
 
-  def self.send_transaction( from:, to:, value: )
-    account = Account[from]
-    account.balance -= value    ## move value to msg (todo/fix: restore if exception)
+  def self.send_transaction( *args, data: [], from:, to:, value: 0 )
+    if value > 0
+      account = Account[from]
+      account.balance -= value    ## move value to msg (todo/fix: restore if exception)
+    end
 
     ## setup contract msg context
     self.msg = { sender: from, value: value }
 
-    to.call()   ## assume call (default method) for now
+    if args.size == 0  ## assume call (default method) for now
+      to.call()
+    else   ## assume method name
+      m   = args[0]
+      to.send( m, *data )
+    end
   end
 
 
@@ -208,8 +224,22 @@ class Universum   ## Uni short for Universum
   end
 
 
+  def self.blockhash( number )
+    ## for now return "dummy" blockhash
+    sha256( "blockhash #{number}" )
+  end
+
   def self.block
     @@block ||= Block.new
+  end
+
+  def self.block=( value )
+    if value.is_a? Hash
+      kwargs = value
+      @@block = Block.new( kwargs )
+    else   ## assume Block class/type
+      @@block = value
+    end
   end
 
 end  ## class Universum
