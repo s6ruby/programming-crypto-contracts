@@ -4,12 +4,7 @@
 #  satoshi dice gambling - up to 65 000x returns on your bet!
 #
 #  to run type:
-#    $ ruby ./satoshi_dice.rb
-
-
-require_relative './lib/universum'
-
-
+#    $ ruby ./run_satoshi_dice.rb
 
 
 class SatoshiDice < Contract
@@ -17,35 +12,23 @@ class SatoshiDice < Contract
   ## type struct - address user; uint block; uint cap; uint amount;
   Bet = Struct.new( :user, :block, :cap, :amount )
 
-  ## Fee is 1 / 100
-  FEE_NUMERATOR = 1
-  FEE_DENOMINATOR = 100
+  ## Fee (Casino House Edge) is 1.9%, that is, 19 / 1000
+  FEE_NUMERATOR   = 19
+  FEE_DENOMINATOR = 1000
+
 
   MAXIMUM_CAP = 2**16   # 65_536 = 2^16 = 2 byte/16 bit
   MAXIMUM_BET = 100_000_000
   MINIMUM_BET = 100
 
-  class BetPlaced < Event
-    ## type uint id, address user, uint cap, uint amount
-    def initialize( id, user, cap, amount )
-      @id, @user, @cap, @amount = id, user, cap, amount
-    end
-  end
-
-  class Roll < Event
-    ## type uint id, uint rolled
-    def initialize( id, rolled )
-      @id, @rolled = id, rolled
-    end
-  end
+  BetPlaced = Event.create( :id, :user, :cap, :amount )  ## type uint id, address user, uint cap, uint amount
+  Roll      = Event.create( :id, :rolled )               ## type uint id, uint rolled
 
 
   def initialize
     @owner   = msg.sender
     @counter = 0
     @bets    = {}   ## type mapping(uint => Bet)
-
-    @balance = 0   ## keep track of contract balance "by hand" for now (todo/fix: make it "automatic/builtin")
   end
 
   def bet( cap )
@@ -54,7 +37,6 @@ class SatoshiDice < Contract
 
      @counter += 1
      @bets[@counter] = Bet.new( msg.sender, block.number+3, cap, msg.value )
-     @balance += msg.value   ## fix/todo: track remaining balance "by hand" for now
      log BetPlaced.new( @counter, msg.sender, cap, msg.value )
   end
 
@@ -81,15 +63,13 @@ class SatoshiDice < Contract
        puts "bingo! payout: #{payout}, fee: #{fee}"
 
        msg.sender.transfer( payout )
-       @balance -= payout   ## fix/todo: track remaining balance "by hand" for now
     end
 
     log Roll.new( id, rolled )
     @bets.delete( id )
   end
 
-  def fund
-    @balance += msg.value  ## fix/todo: track remaining balance "by hand" for now
+  def fund    # @payable
   end
 
   def kill
@@ -97,52 +77,3 @@ class SatoshiDice < Contract
     selfdestruct( @owner )
   end
 end
-
-
-
-## setup test accounts with starter balance
-Account[ '0x1111' ].balance = 1_000
-Account[ '0xaaaa' ].balance = 1_000
-Account[ '0xbbbb' ].balance = 1_000
-Account[ '0xcccc' ].balance = 1_000
-
-## pretty print (pp) all known accounts with balance
-pp Uni.accounts
-
-
-Uni.msg = { sender: '0x1111' }
-dice = SatoshiDice.new
-pp dice
-
-# Uni.msg = { sender: '0x1111', value: 1_000 }
-# dice.fund
-Uni.send_transaction( :fund, from: '0x1111', to: dice, value: 1_000 )
-pp dice
-
-
-# Uni.msg = { sender: '0xaaaa', value: 100 }
-# dice.bet( 20_000 )
-Uni.send_transaction( :bet, data: [20_000], from: '0xaaaa', to: dice, value: 100 )
-pp dice
-
-# Uni.msg = { sender: '0xbbbb', value: 100 }
-# dice.bet( 30_000 )
-Uni.send_transaction( :bet, data: [30_000], from: '0xbbbb', to: dice, value: 100 )
-pp dice
-
-## "mine" some blocks - block number (height) set to 3 and timestamp to Time.now
-Uni.block = { timestamp: Time.now.to_i, number: 3 }
-
-
-# Uni.msg = { sender: '0xaaaa' }
-# dice.roll( 1 )
-Uni.send_transaction( :roll, data: [1], from: '0xaaaa', to: dice )
-pp dice
-
-# Uni.msg = { sender: '0xbbbb' }
-# dice.roll( 2 )
-Uni.send_transaction( :roll, data: [2], from: '0xbbbb', to: dice )
-pp dice
-
-## pretty print (pp) all known accounts with balance
-pp Uni.accounts
