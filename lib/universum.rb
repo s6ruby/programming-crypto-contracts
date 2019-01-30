@@ -183,6 +183,14 @@ class Contract
     Universum.blockhash( number )
   end
 
+private
+  def selfdestruct( owner )   ## todo/check: use a different name e.g. destruct/ delete - why? why not?
+    ## selfdestruct function (for clean-up on blockchain)
+    owner.send( @balance )    ## send back all funds owned/hold by contract
+     
+     ## fix: does nothing for now - add some code (e.g. cleanup)
+     ##  mark as destruct - why? why not?
+  end
 end  # class Contract
 
 
