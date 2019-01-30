@@ -31,8 +31,6 @@ Uni.send_transaction( from: '0xcccc', to: gov, value: 1_000_000 )
 pp gov
 Uni.send_transaction( from: '0xdddd', to: gov, value: 1_000_000 )
 pp gov
-Uni.send_transaction( from: '0xeeee', to: gov, value: 1_000_000 )
-pp gov
 
 ## (pp) pretty print all known accounts with balance
 pp Uni.accounts
