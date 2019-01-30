@@ -294,8 +294,7 @@ got already ALL the investment back with 83_333 profits!
 
 
 
-##  Real World Case Study - Ponzi Governmental - Last Creditor (Before Collapse) Wins the Jackpot!
-
+##  Ponzi Governmental - Real World Case Study - Last Creditor (Before Collapse) Wins the Jackpot!
 
 Let's look at a real world ponzi (scheme) contract
 called Governmental
