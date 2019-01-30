@@ -34,8 +34,8 @@ module Address
     ## todo/fix: add missing  -= part in transfer!!!!
 
     ## use this (current contract) for debit (-) ammount
-    this._debit( value )    # subtract / debit from the sender (current contract)
-    _credit( value )        # add / credit to the recipient
+    this._sub( value )    # sub(tract) / debit from the sender (current contract)
+    _add( value )         # add / credit to the recipient
   end
 
   def balance
@@ -43,12 +43,12 @@ module Address
   end
 
   ### private (internal use only) methods - PLEASE do NOT use (use transfer/send)
-  def _debit( value )
+  def _sub( value )
     @balance ||= 0   ## return 0 if undefined
     @balance -= value
   end
 
-  def _credit( value )
+  def _add( value )
     @balance ||= 0   ## return 0 if undefined
     @balance += value
   end
@@ -70,6 +70,15 @@ class String
     ## check if self is an address
     if self.start_with?( '0x' )
       Account[self].send( value )
+    else
+      raise "(Auto-)Type Conversion from Address (Hex) String to Account Failed; Expected String Starting with 0x got #{self}; Contract Halted (Stopped)"
+    end
+  end
+
+  def _sub( value )
+    ## check if self is an address
+    if self.start_with?( '0x' )
+      Account[self]._sub( value )
     else
       raise "(Auto-)Type Conversion from Address (Hex) String to Account Failed; Expected String Starting with 0x got #{self}; Contract Halted (Stopped)"
     end
@@ -187,10 +196,11 @@ private
   def selfdestruct( owner )   ## todo/check: use a different name e.g. destruct/ delete - why? why not?
     ## selfdestruct function (for clean-up on blockchain)
     owner.send( @balance )    ## send back all funds owned/hold by contract
-     
+
      ## fix: does nothing for now - add some code (e.g. cleanup)
      ##  mark as destruct - why? why not?
   end
+
 end  # class Contract
 
 
@@ -234,8 +244,8 @@ class Universum   ## Uni short for Universum
       account = Account[from]
 
       ## move value to msg (todo/fix: restore if exception)
-      account._debit( value )  # subtract / debit from the sender (account)
-      to._credit( value )      # add / credit to the recipient
+      account._sub( value )  # (sub)tract / debit from the sender (account)
+      to._add( value )       # add / credit to the recipient
     end
 
 
