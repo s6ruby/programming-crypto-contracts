@@ -8,34 +8,68 @@ def sha256( str )
 end
 
 
-def address( o )
-  if o.is_a? Contract
-    ##  fix/todo:  use/lookup proper addr from contract
-    ## construct address for now from object_id
-    "0x#{(o.object_id << 1).to_s(16)}"
-  else
-    raise "Type Conversion to Address Failed; Expected Contract got #{o.inspect}; Contract Halted (Stopped)"
+
+module Address
+  def address
+    if @address
+      @address
+    else
+      if is_a? Contract
+         ##  fix/todo:  use/lookup proper addr from contract
+         ## construct address for now from object_id
+         "0x#{(object_id << 1).to_s(16)}"
+      else  ## assume Account
+         '0x0000'
+      end
+    end
+  end # method address
+
+  def transfer( value )  ## @payable @public
+    ## todo/fix: throw exception if insufficient funds
+    send( value )   # returns true/false
   end
-end
 
+  def send( value )  ## @payable @public
+    ## todo/fix: assert value > 0
+    ## todo/fix: add missing  -= part in transfer!!!!
 
+    ## use this (current contract) for debit (-) ammount
+    this._debit( value )    # subtract / debit from the sender (current contract)
+    _credit( value )        # add / credit to the recipient
+  end
+
+  def balance
+    @balance ||= 0   ## return 0 if undefined
+  end
+
+  ### private (internal use only) methods - PLEASE do NOT use (use transfer/send)
+  def _debit( value )
+    @balance ||= 0   ## return 0 if undefined
+    @balance -= value
+  end
+
+  def _credit( value )
+    @balance ||= 0   ## return 0 if undefined
+    @balance += value
+  end
+end  # class Address
 
 
 
 class String
-  def send( value )
+  def transfer( value )
     ## check if self is an address
     if self.start_with?( '0x' )
-      Account[self].send( value )
+      Account[self].transfer( value )
     else
       raise "(Auto-)Type Conversion from Address (Hex) String to Account Failed; Expected String Starting with 0x got #{self}; Contract Halted (Stopped)"
     end
   end
 
-  def transfer( value )
+  def send( value )
     ## check if self is an address
     if self.start_with?( '0x' )
-      Account[self].transfer( value )
+      Account[self].send( value )
     else
       raise "(Auto-)Type Conversion from Address (Hex) String to Account Failed; Expected String Starting with 0x got #{self}; Contract Halted (Stopped)"
     end
@@ -47,10 +81,10 @@ end
 class Account
 
   @@directory = {}
-  def self.find_by_addr( key ) @@directory[ key ]; end
+  def self.find_by_address( key ) @@directory[ key ]; end
 
   def self.[]( key )
-    o = find_by_addr( key )
+    o = find_by_address( key )
     if o
       o
     else
@@ -62,31 +96,27 @@ class Account
   end
 
   def self.all
-    @@directory.values.sort { |l,r| l.addr <=> r.addr }   ## sort by hex addr string
+    ## todo/fix: do NOT sort - to keep "stable" order
+    ##   - check if values is insertion order
+    @@directory.values.sort { |l,r| l.address <=> r.address }   ## sort by hex addr string
   end
 
 
   ####
   #  account (builtin) services / transaction methods
+  include Address    ## includes address + send/transfer/balance
 
-  attr_reader   :addr
-  attr_accessor :balance    ## note: for now allow write access too!!!
-
-  def send( value )    # @payable
-    ## todo/fix: assert value > 0
-    @balance += value
+  ## note: for now allow write access too!!!
+  def balance=( value )
+    @balance = value
   end
 
-  def transfer( value )    # @payable
-    ## todo/fix: assert value > 0
-    ## todo/fix: add missing  -= part in transfer!!!!
-    @balance += value
-  end
-
+  ## note: needed by transfer/send
+  def this()       Universum.this;         end   ## returns current contract
 
 private
-  def initialize( addr, balance: 0 )
-    @addr    = addr       # type address - (hex) string starts with 0x
+  def initialize( address, balance: 0 )
+    @address = address    # type address - (hex) string starts with 0x
     @balance = balance    # uint
   end
 
@@ -94,66 +124,64 @@ end # class Account
 
 
 
+## base class for events
+class Event
+  ## return a new Struct-like read-only class
+
+  ##
+  ##  todo/fix: make it work with self.new (for convenience) too!!!!
+  ##    - check source of Struct.new - why? why not? possible?
+  def self.create( *fields )
+    klass = Class.new( Event ) do
+      define_method( :initialize ) do |*args|
+        fields.zip( args ).each do |field, arg|
+          instance_variable_set( "@#{field}", arg )
+        end
+      end
+
+      fields.each do |field|
+        define_method( field ) do
+          instance_variable_get( "@#{field}" )
+        end
+      end
+    end
+    klass
+  end
+end  # class Event
+
+
+
+
 class Contract
-  class Event; end   ## base class for events
-
-
-  def self.handlers    ## use listeners/observers/subscribers/... - why? why not?
-    @@handlers ||= []
-  end
-
-
-  def self.log( event )
-    handlers.each { |h| h.handle( event ) }
-  end
-
-  def log( event ) self.class.log( event ); end
+  ####
+  #  account (builtin) services / transaction methods
+  include Address    ## includes address + send/transfer/balance
 
 
   def assert( cond )
-    cond == true ? true : false
+    if cond == true
+      ## do nothing
+    else
+      raise 'Contract Assertion Failed; Contract Halted (Stopped)'
+    end
   end
 
   def require( cond )
     if cond == true
       ## do nothing
     else
-      raise 'Contract Condition Failed; Contract Halted (Stopped)'
+      raise 'Contract Require Condition Failed; Contract Halted (Stopped)'
     end
   end
 
-  ## todo/fix: return address - why? why not?
-  def this() self; end
-
-  def msg()   Universum.msg;   end
-  def block() Universum.block; end
+  def this()       Universum.this;         end   ## returns current contract
+  def log( event ) Universum.log( event ); end
+  def msg()        Universum.msg;          end
+  def block()      Universum.block;        end
   def blockhash( number )
     ## todo/fix: only allow going back 255 blocks; check if number is in range!!!
     Universum.blockhash( number )
   end
-
-
-  def destroy( owner )   ## todo/check: use a different name e.g. destruct/ delete - why? why not?
-     ## selfdestruct function (for clean-up on blockchain)
-     ## fix: does nothing for now - add some code (e.g. cleanup)
-     ##  mark as destruct - why? why not?
-  end
-
-  def send_transaction( method, *args, **kwargs )
-    if kwargs[:from]
-      from = kwargs.delete( :from )
-      Universum.msg = { sender: from }
-    end
-
-    ## todo/fix: check arity of method to call to pass along right params - quick and dirty hack/check for now used for kwargs
-    if kwargs.empty?
-      __send__( method, *args )   ## note: use __send__ (instead of send - might be overriden)
-    else
-      __send__( method, *args, **kwargs )   ## note: use __send__ (instead of send - might be overriden)
-    end
-      ## todo/fix: add send_tx alias - why? why not?
-  end
-
 
 end  # class Contract
 
@@ -184,23 +212,51 @@ end  # class Block
 
 
 
+
 class Universum   ## Uni short for Universum
   ## convenience helpers
 
-  def self.send_transaction( *args, data: [], from:, to:, value: 0 )
+
+  def self.send_transaction( from:, to:, value: 0, data: [] )
+    ## transaction counter 1,2,3,etc. (sometimes called nounce too)
+    @@counter ||= 0
+    @@counter += 1       ## start with 0 or 1 (for now starting with 1 - why? why not?)
+
     if value > 0
       account = Account[from]
-      account.balance -= value    ## move value to msg (todo/fix: restore if exception)
+
+      ## move value to msg (todo/fix: restore if exception)
+      account._debit( value )  # subtract / debit from the sender (account)
+      to._credit( value )      # add / credit to the recipient
     end
+
 
     ## setup contract msg context
     self.msg = { sender: from, value: value }
 
-    if args.size == 0  ## assume call (default method) for now
-      to.call()
+    self.this = to    ## assumes for now that to is always a contract (and NOT an account)!!!
+
+    ## for debug add transaction (tx) args (e.g. from, value, etc.)
+    tx_args_debug = { from: from }
+    tx_args_debug[ :value ] = value    if value > 0
+
+    ## use our "own" pretty print / inspect (to string) format
+    tx_args_debug_str = tx_args_debug.reduce( [] ) { |ary,(k,v)| ary; ary << "#{k}: #{v.inspect}" }.join( ', ' )
+
+
+    if data.empty?  ## assume process (default method) for now
+      puts "** tx ##{@@counter} (block ##{block.number}): #{tx_args_debug_str} => to: #{to.class.name} default function"
+      to.process()
     else   ## assume method name
-      m   = args[0]
-      to.send( m, *data )
+      m    = data[0]       ## method name / signature
+      args = data[1..-1]   ## arguments
+
+      ## convert all args to string (with inspect) for debugging
+      ##   check if pretty_inspect adds trailing newline? why? why not? possible?
+      args_debug = args.reduce( [] ) { |ary,arg| ary; ary << arg.inspect }.join( ', ' )
+      puts "** tx ##{@@counter} (block ##{block.number}): #{tx_args_debug_str} => to: #{to.class.name} #{m}( #{args_debug} )"
+
+      to.__send__( m, *args )    ## note: use __send__ to avoid clash with send( value ) for sending payments!!!
     end
   end
 
@@ -242,9 +298,31 @@ class Universum   ## Uni short for Universum
     end
   end
 
+  def self.this    ## returns current contract
+    @@this
+  end
+
+  def self.this=(value)
+    ## todo/fix: check that value is a contract
+    @@this = value
+  end
+
+
+  def self.handlers    ## use listeners/observers/subscribers/... - why? why not?
+    @@handlers ||= []
+  end
+
+  def self.log( event )
+    handlers.each { |h| h.call( event ) }
+  end
 end  ## class Universum
+
 
 Uni = Universum   ## add some convenience aliases (still undecided what's the most popular :-)
 UNI = Universum
 UN  = Universum
 U   = Universum
+
+
+## (auto-)add (debug) log handler for now - pretty print (pp) events to console
+Uni.handlers << (->(event) { puts "** event: #{event.pretty_inspect}" })
