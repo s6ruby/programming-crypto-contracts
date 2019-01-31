@@ -48,11 +48,10 @@ The scheme is named after Charles Ponzi who became notorious for using the techn
 >
 > -- [Ponzi Scheme @ Wikipedia](https://en.wikipedia.org/wiki/Ponzi_scheme)
 
+![](i/trolly-ponzi.png)
 
 
-
-
-Now in 2019 ponzi schemes are as popular as ever. For
+Back to the future. Now in 2019 ponzi schemes are as popular as ever. For
 modern Get-Rich-Quick "verifiable corrupt" ponzi schemes
 running on the blockchain
 browse the ["high-risk" category](https://dappradar.com/rankings/protocol/ethereum/category/high-risk) of contract scripts
@@ -134,8 +133,6 @@ To the moon!
 
 
 ### Gradual Ponzi - May the Brave be Rewared with Riches!
-
-![](i/trolly-ponzi.png)
 
 Let's put together a more realistic ponzi
 where investor get above-average returns gradually
