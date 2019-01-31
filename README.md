@@ -8,8 +8,6 @@ _Let's Start with Ponzi & Pyramid Schemes. Run Your Own Lotteries, Gambling Casi
 
 ## Ponzis and Pyramids
 
-![](i/trolly-ponzi.png)
-
 ### Simple Ponzi - Investment of a Lifetime!
 
 Let's start with a simple ponzi scheme contract:
@@ -137,6 +135,7 @@ To the moon!
 
 ### Gradual Ponzi - May the Brave be Rewared with Riches!
 
+![](i/trolly-ponzi.png)
 
 Let's put together a more realistic ponzi
 where investor get above-average returns gradually
