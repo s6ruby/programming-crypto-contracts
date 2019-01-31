@@ -4,6 +4,11 @@
 _Let's Start with Ponzi & Pyramid Schemes. Run Your Own Lotteries, Gambling Casinos and more on the Blockchain World Computer..._
 
 
+**BEWARE: Gambling is fun and addictive. Winning and losing. Up and down.
+Treat crypto "games" as entertainment like casino gambling, sports betting or poker cards playing.
+Do NOT "invest" trying to get-rich-quick
+or raise the stakes trying to win back what you have lost, and so on.**
+
 
 
 ## Ponzis and Pyramids
