@@ -5,8 +5,10 @@ _Let's Start with Ponzi & Pyramid Schemes. Run Your Own Lotteries, Gambling Casi
 
 
 
+
 ## Ponzis and Pyramids
 
+![](i/trolly-ponzi.png)
 
 ### Simple Ponzi - Investment of a Lifetime!
 
