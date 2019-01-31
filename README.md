@@ -58,6 +58,9 @@ running on the blockchain
 browse the ["high-risk" category](https://dappradar.com/rankings/protocol/ethereum/category/high-risk) of contract scripts
 running on Ethereum, for example.
 
+![](i/dappradar-highrisk.png)
+
+
 Anyways, let's get back to the first simple ponzi contract script.
 The idea is:
 
