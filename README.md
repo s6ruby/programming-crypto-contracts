@@ -43,12 +43,14 @@ end # class SimplePonzi
 
 What's a ponzi scheme?
 
+![](i/trolly-ponzi.png)
+
+
 > A Ponzi scheme (also a Ponzi game) is a form of fraud which lures investors and pays profits to earlier investors by using funds obtained from more recent investors. The victims are led to believe that the profits are coming from product sales or other means, and they remain unaware that other investors are the source of profits. A Ponzi scheme is able to maintain the illusion of a sustainable business as long as there continue to be new investors willing to contribute new funds, and as long as most of the investors do not demand full repayment and are willing to believe in the non-existent assets that they are purported to own.
 The scheme is named after Charles Ponzi who became notorious for using the technique in the 1920s.
 >
 > -- [Ponzi Scheme @ Wikipedia](https://en.wikipedia.org/wiki/Ponzi_scheme)
 
-![](i/trolly-ponzi.png)
 
 
 Back to the future. Now in 2019 ponzi schemes are as popular as ever. For
