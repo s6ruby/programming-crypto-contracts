@@ -4,11 +4,9 @@
 # a simple pyramid (scheme) contract
 #   last investors (or suckers) HODLing the bag
 #
-#  to run / test - use:
-#    $ ruby ./pyramid_simple.rb
+#  to run type:
+#    $ ruby ./run_pyramid_simple.rb
 
-
-require_relative './lib/universum'
 
 
 class SimplePyramid < Contract
@@ -22,17 +20,17 @@ class SimplePyramid < Contract
     @next_payout = 3   # start first payout with 3 investors (1 / 2,3) on depth+1 (e.g. 2nd) level
 
     @investors = []    # type address[] - array of address
-    @investors.push( msg.sender )
+    @investors << msg.sender
 
     @balances = Hash.new(0)  # hash mapping with default value 0
-    @balances[ address(this) ] = msg.value
+    @balances[ address ] = msg.value
   end
 
-  def call   # @payable @public
+  def process   # @payable
     require( msg.value >= MINIMUM_INVESTMENT )
-    @balances[ address(this) ] += msg.value
+    @balances[ address ] += msg.value
 
-    @investors.push( msg.sender )
+    @investors << msg.sender
 
     if( @investors.size == @next_payout )
       # payout previous layer in pyramid
@@ -59,7 +57,7 @@ class SimplePyramid < Contract
 
       ## share remaining balance among all
       paid  = MINIMUM_INVESTMENT * 2**(@depth-1)
-      share = (@balances[ address(this) ] - paid) / @investors.size
+      share = (@balances[ address ] - paid) / @investors.size
       puts "paid out: #{paid}, remaining share / investor: #{share}"
 
       @investors.each do |investor|
@@ -67,70 +65,16 @@ class SimplePyramid < Contract
       end
 
       ## update pyramid state
-      @balances[ address(this) ] = 0
+      @balances[ address ] = 0
       @depth += 1
       @next_payout += 2**@depth
     end
   end
 
   def withdraw
-    payout = @balances[msg.sender]
-    @balances[msg.sender] = 0
+    payout = @balances[ msg.sender ]
+    @balances[ msg.sender ] = 0
     msg.sender.transfer( payout )
   end
 
 end  # class SimplePyramid
-
-
-
-###
-# test contract
-
-## setup test accounts with starter balance
-Account[ '0xaa11' ].balance = 1_000_000
-Account[ '0xaa22' ].balance = 1_000_000
-Account[ '0xbb11' ].balance = 1_000_000
-Account[ '0xbb22' ].balance = 1_000_000
-Account[ '0xbb33' ].balance = 1_000_000
-Account[ '0xbb44' ].balance = 1_000_000
-Account[ '0xcc11' ].balance = 1_000_000
-Account[ '0xcc22' ].balance = 1_000_000
-
-## dump (show) all known accounts with balance
-pp Uni.accounts
-
-## genesis (founder)
-Uni.msg = { sender: '0x0000', value: 1_000_000 }
-pyramid = SimplePyramid.new
-pp pyramid
-
-## level 1
-Uni.send_transaction( from: '0xaa11', to: pyramid, value: 1_000_000 )
-pp pyramid
-Uni.send_transaction( from: '0xaa22', to: pyramid, value: 1_000_000 )
-pp pyramid
-
-## level 2
-Uni.send_transaction( from: '0xbb11', to: pyramid, value: 1_000_000 )
-pp pyramid
-Uni.send_transaction( from: '0xbb22', to: pyramid, value: 1_000_000 )
-pp pyramid
-Uni.send_transaction( from: '0xbb33', to: pyramid, value: 1_000_000 )
-pp pyramid
-Uni.send_transaction( from: '0xbb44', to: pyramid, value: 1_000_000 )
-pp pyramid
-
-# level 3
-Uni.send_transaction( from: '0xcc11', to: pyramid, value: 1_000_000 )
-pp pyramid
-Uni.send_transaction( from: '0xcc22', to: pyramid, value: 1_000_000 )
-pp pyramid
-
-## dump (show) all known accounts with balance
-pp Uni.accounts
-
-pyramid.send_transaction( :withdraw, from: '0x0000' )
-pp pyramid
-
-## dump (show) all known accounts with balance
-pp Uni.accounts

@@ -4,11 +4,10 @@
 # a more realistic gradual ponzy (scheme) contract
 #   last investors (or suckers) HODLing the bag
 #
-#  to run / test - use:
-#    $ ruby ./ponzi_v2.rb
+#  to run type:
+#    $ ruby ./run_ponzi_gradual.rb
 
 
-require_relative './lib/universum'
 
 
 class GradualPonzi < Contract
@@ -23,7 +22,7 @@ class GradualPonzi < Contract
   end
 
 
-  def call    ## @payable @public  (default function)
+  def process    ## @payable default function
     require( msg.value >= MINIMUM_INVESTMENT )
 
     investor_share = msg.value / @investors.size
@@ -43,40 +42,3 @@ class GradualPonzi < Contract
 
 
 end # class GradualPonzi
-
-
-###
-# test contract
-
-## setup test accounts with starter balance
-Account[ '0xaaaa' ].balance = 1_000_000
-Account[ '0xbbbb' ].balance = 1_000_000
-Account[ '0xcccc' ].balance = 1_000_000
-Account[ '0xdddd' ].balance = 1_000_000
-
-## dump (show) all known accounts with balance
-pp Uni.accounts
-
-
-ponzi = GradualPonzi.new
-
-Uni.send_transaction( from: '0xaaaa', to: ponzi, value: 1_000_000 )
-pp ponzi
-
-Uni.send_transaction( from: '0xbbbb', to: ponzi, value: 1_000_000 )
-pp ponzi
-
-Uni.send_transaction( from: '0xcccc', to: ponzi, value: 1_000_000 )
-pp ponzi
-
-Uni.send_transaction( from: '0xdddd', to: ponzi, value: 1_000_000 )
-pp ponzi
-
-## dump (show) all known accounts with balance
-pp Uni.accounts
-
-ponzi.send_transaction( :withdraw, from: '0xaaaa' )
-pp ponzi
-
-## dump (show) all known accounts with balance
-pp Uni.accounts

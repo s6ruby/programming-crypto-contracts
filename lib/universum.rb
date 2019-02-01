@@ -167,6 +167,10 @@ class Contract
   include Address    ## includes address + send/transfer/balance
 
 
+  def process    ## @payable default fallback
+  end
+
+
   def assert( cond )
     if cond == true
       ## do nothing
