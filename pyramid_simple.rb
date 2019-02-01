@@ -11,7 +11,7 @@
 
 class SimplePyramid < Contract
 
-  MINIMUM_INVESTMENT = 1_000_000  # unit   # use 1e15 - why? why not?
+  MINIMUM_INVESTMENT = 1_000_000
 
   def initialize
     require( msg.value >= MINIMUM_INVESTMENT )
@@ -20,9 +20,9 @@ class SimplePyramid < Contract
     @next_payout = 3   # start first payout with 3 investors (1 / 2,3) on depth+1 (e.g. 2nd) level
 
     @investors = []    # type address[] - array of address
-    @investors << msg.sender
+    @investors.push( msg.sender )
 
-    @balances = Hash.new(0)  # hash mapping with default value 0
+    @balances = Mapping.of( Address => Integer )   # hash mapping with default value 0
     @balances[ address ] = msg.value
   end
 
@@ -30,7 +30,7 @@ class SimplePyramid < Contract
     require( msg.value >= MINIMUM_INVESTMENT )
     @balances[ address ] += msg.value
 
-    @investors << msg.sender
+    @investors.push( msg.sender )
 
     if( @investors.size == @next_payout )
       # payout previous layer in pyramid
