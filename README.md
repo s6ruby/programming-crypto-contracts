@@ -20,12 +20,14 @@ Let's start with a simple ponzi scheme contract:
 ``` ruby
 class SimplePonzi < Contract
 
+  payable :process
+
   def initialize
     @current_investor   = msg.sender
     @current_investment = 0
   end
 
-  def process      # @payable default function
+  def process
     # note: new investments must be 10% greater than current
     minimum_investment = @current_investment * 11 / 10
     require( msg.value > minimum_investment )
@@ -159,17 +161,19 @@ as more investors join in:
 ``` ruby
 class GradualPonzi < Contract
 
+  payable :process
+
   MINIMUM_INVESTMENT = 1_000_000
 
   def initialize
-    @investors = []    # type address[] - array of address
+    @investors = []                   # Array.of( Address )
     @investors.push( msg.sender )
 
-    @balances = Mapping.of( Address => Integer )  # type mapping( address => unit )
+    @balances = Mapping.of( Address => Money ) 
   end
 
 
-  def process    # @payable default function
+  def process
     require( msg.value >= MINIMUM_INVESTMENT )
 
     investor_share = msg.value / @investors.size
@@ -182,8 +186,8 @@ class GradualPonzi < Contract
 
 
   def withdraw
-    payout = @balances[msg.sender]
-    @balances[msg.sender] = 0
+    payout = @balances[ msg.sender ]
+    @balances[ msg.sender ] = 0
     msg.sender.transfer( payout )
   end
 end # class GradualPonzi
@@ -488,6 +492,11 @@ Let's convert the contract code to ruby and run it to decipher (and understand) 
 ``` ruby
 class Governmental < Contract
 
+  payable :initialize
+  payable :lend_government_money, Address => Bool
+  payable :process
+  payable :invest_in_the_system
+
   MINIMUM_INVESTMENT = 1_000_000
   TWELVE_HOURS       = 43_200     ## in seconds e.g. 12h*60min*60secs
 
@@ -498,9 +507,9 @@ class Governmental < Contract
     @corrupt_elite           = msg.sender
     @last_time_of_new_credit = block.timestamp
 
-    @creditor_addresses = []
-    @creditor_amounts   = []
-    @buddies            = Mapping.of( Address => Integer )
+    @creditor_addresses = []   # Array.of( Address )
+    @creditor_amounts   = []   # Array.of( Money   )
+    @buddies            = Mapping.of( Address => Money )
 
     @round = 0
     @last_creditor_paid_out = 0
@@ -567,11 +576,11 @@ class Governmental < Contract
     end
   end # method lend_government_money
 
-  def process   ## @payable default function
+  def process
     lend_government_money( '0x0000' )
   end
 
-  def total_debt    ## returns type uint debt
+  def total_debt 
     debt = 0
     (@last_creditor_paid_out...@creditor_amounts.length).each do |i|
       debt += @creditor_amounts[i]
@@ -579,7 +588,7 @@ class Governmental < Contract
     debt
   end
 
-  def total_paid_out   ## returns type uint payout
+  def total_paid_out
     payout = 0
     (0...@last_creditor_paid_out).each do |i|
       payout += @creditor_amounts[i]
