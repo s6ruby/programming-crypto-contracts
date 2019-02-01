@@ -431,8 +431,8 @@ contract Government {
                 if (profitFromCrash < 10000 * 10**18) {
                     profitFromCrash += amount * 5/100;
                 }
-                // if you have a buddy in the government (and he is in the creditor list) he can get 5% of your credits.
-                // Make a deal with him.
+                // if you have a buddy in the government (and he is in the creditor list) 
+                // he can get 5% of your credits. Make a deal with him.
                 if(buddies[buddy] >= amount) {
                     buddy.send(amount * 5/100);
                 }
