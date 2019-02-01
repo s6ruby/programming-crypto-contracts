@@ -500,7 +500,7 @@ class Governmental < Contract
 
     @creditor_addresses = []
     @creditor_amounts   = []
-    @buddies = Hash.new(0)
+    @buddies            = Mapping.of( Address => Integer )
 
     @round = 0
     @last_creditor_paid_out = 0
@@ -517,7 +517,7 @@ class Governmental < Contract
       msg.sender.send( amount )
       ## Sends all contract money to the last creditor
       @creditor_addresses[ @creditor_addresses.length-1].send( @profit_from_crash )
-      @corrupt_elite.send( @balance )
+      @corrupt_elite.send( balance )
       ## Reset contract state
       @last_creditor_paid_out = 0
       @last_time_of_new_credit = block.timestamp
@@ -553,7 +553,7 @@ class Governmental < Contract
         @buddies[ msg.sender ] += amount * 110 / 100
 
         ## 90% of the money will be used to pay out old creditors
-        if @creditor_amounts[ @last_creditor_paid_out] <= @balance - @profit_from_crash
+        if @creditor_amounts[ @last_creditor_paid_out] <= balance - @profit_from_crash
           @creditor_addresses[ @last_creditor_paid_out ].send( @creditor_amounts[@last_creditor_paid_out] )
 
           @buddies[ @creditor_addresses[ @last_creditor_paid_out ]] = 0
@@ -568,7 +568,7 @@ class Governmental < Contract
   end # method lend_government_money
 
   def process   ## @payable default function
-    lend_government_money( 0 )   ## sorry - no buddy (e.g. 0) in government gets 5% "referral" fee
+    lend_government_money( '0x0000' )
   end
 
   def total_debt    ## returns type uint debt
@@ -617,7 +617,7 @@ and `@creditor_amounts` arrays.
 the last timestamp of the last creditor's block timestamp.
 The timestamp is in seconds since Jan 1st, 1970
 (also known as Unix Epoch Time - e.g. print the current Epoch
-Time with `Time.now.to_s`).
+Time with `Time.now.to_i` resulting in `1549040124` on Feb 1st, 2019 @ 16:55.24).
 
 `@profit_from_crash` - Store the jackpot value! Starting with a
 seed down payment / investment of the contract owner
