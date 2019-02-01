@@ -55,6 +55,37 @@ module Address
 end  # class Address
 
 
+class Bool; end   ## add dummy bool class for mapping
+
+
+class Mapping
+  def self.of( *args )
+     ## e.g. gets passed in [{Address=>Integer}]
+     ##  check for Integer - use Hash.new(0)
+     ##  check for Bool    - use Hash.new(False)
+     if args[0].is_a? Hash
+       arg = args[0].to_a   ## convert to array (for easier access)
+       if arg[0][1] == Integer
+         Hash.new( 0 )     ## if key missing returns 0 and NOT nil (the default)
+       elsif arg[0][1] == Bool
+         Hash.new( false )
+       elsif arg[0][1] == Address
+         Hash.new( '0x0000' )
+       else   ## assume "standard" defaults
+         Hash.new
+       end
+     else
+       Hash.new    ## that is, "plain" {} with all "standard" defaults
+     end
+  end
+end
+
+class Array
+  def self.of( *args )
+     Array.new    ## that is, "plain" [] with all "standard" defaults
+  end
+end
+
 
 class String
   def transfer( value )
