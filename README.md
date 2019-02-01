@@ -21,13 +21,13 @@ Let's start with a simple ponzi scheme contract:
 class SimplePonzi < Contract
 
   def initialize
-    @current_investor   = '0x0000'   # type address - (hex) string starts with 0x
-    @current_investment = 0          # type uint
+    @current_investor   = msg.sender
+    @current_investment = 0
   end
 
-  def call    ## @payable @public  (default function)
+  def process      # @payable default function
     # note: new investments must be 10% greater than current
-    minimum_investment = @current_investment * 11/10
+    minimum_investment = @current_investment * 11 / 10
     require( msg.value > minimum_investment )
 
     # record new investor
@@ -50,8 +50,10 @@ What's a ponzi scheme?
 
 ![](i/trolly-ponzi.png)
 
+(Source: [Best of Bitcoin Maximalist - Scammers, Morons, Clowns, Shills & BagHODLers - Inside The New New Crypto Ponzi Economics](https://bitsblocks.github.io/bitcoin-maximalist))
 
-> A Ponzi scheme (also a Ponzi game) is a form of fraud which lures investors and pays profits to earlier investors by using funds obtained from more recent investors. The victims are led to believe that the profits are coming from product sales or other means, and they remain unaware that other investors are the source of profits. A Ponzi scheme is able to maintain the illusion of a sustainable business as long as there continue to be new investors willing to contribute new funds, and as long as most of the investors do not demand full repayment and are willing to believe in the non-existent assets that they are purported to own.
+
+> A Ponzi scheme is a form of fraud which lures investors and pays profits to earlier investors by using funds obtained from more recent investors. The victims are led to believe that the profits are coming from product sales or other means, and they remain unaware that other investors are the source of profits. A Ponzi scheme is able to maintain the illusion of a sustainable business as long as there continue to be new investors willing to contribute new funds, and as long as most of the investors do not demand full repayment and are willing to believe in the non-existent assets that they are purported to own.
 The scheme is named after Charles Ponzi who became notorious for using the technique in the 1920s.
 >
 > -- [Ponzi Scheme @ Wikipedia](https://en.wikipedia.org/wiki/Ponzi_scheme)
@@ -59,7 +61,7 @@ The scheme is named after Charles Ponzi who became notorious for using the techn
 
 
 Back to the future. Now in 2019 ponzi schemes are as popular as ever. For
-modern Get-Rich-Quick "verifiable corrupt" ponzi schemes
+modern Get-Rich-Quick "verifiable corrupt" or "honest" ponzi schemes
 running on the blockchain
 browse the ["high-risk" category](https://dappradar.com/rankings/protocol/ethereum/category/high-risk) of contract scripts
 running on Ethereum, for example.
@@ -67,7 +69,7 @@ running on Ethereum, for example.
 ![](i/dappradar-highrisk.png)
 
 
-Anyways, let's get back to the first simple ponzi contract script.
+Anyways, let's look at the first simple ponzi contract script.
 The idea is:
 
 The money sent in by the latest investor
@@ -82,6 +84,7 @@ Let's setup some test accounts with funny money:
 
 ``` ruby
 ## setup test accounts with starter balance
+Account[ '0x1111' ].balance = 0
 Account[ '0xaaaa' ].balance = 1_000_000
 Account[ '0xbbbb' ].balance = 1_200_000
 Account[ '0xcccc' ].balance = 1_400_000
@@ -90,13 +93,17 @@ Account[ '0xcccc' ].balance = 1_400_000
 pp Uni.accounts      # Uni (short for) Universum
 ```
 
+(Source: [`run_ponzi_simple.rb`](run_ponzi_simple.rb))
+
+
 printing:
 
 ```
-[#<Account @addr="0xaaaa", @balance=1000000>,
- #<Account @addr="0xbbbb", @balance=1200000>,
- #<Account @addr="0xcccc", @balance=1400000>]
-```
+[#<Account @address="0x1111", @balance=0>,
+ #<Account @address="0xaaaa", @balance=1000000>,
+ #<Account @address="0xbbbb", @balance=1200000>,
+ #<Account @address="0xcccc", @balance=1400000>]
+ ```
 
 Note: The contract scripts run on Universum - a 3rd generation blockchain / world computer. New to Universum? See the [Universum (World Computer) White Paper](https://github.com/openblockchains/universum/blob/master/WHITEPAPER.md)!
 
@@ -105,7 +112,10 @@ Note: The contract scripts run on Universum - a 3rd generation blockchain / worl
 And let's invest:
 
 ``` ruby
+Uni.msg = { sender: '0x1111' }
 ponzi = SimplePonzi.new
+pp ponzi
+#=> #<SimplePonzi @current_investment=0, @current_investor="0x1111">
 
 Uni.send_transaction( from: '0xaaaa', to: ponzi, value: 1_000_000 )
 pp ponzi
@@ -126,13 +136,13 @@ pp Uni.accounts
 Resulting in:
 
 ```
-[#<Account @addr="0x0000", @balance=1000000>,
- #<Account @addr="0xaaaa", @balance=1200000>,
- #<Account @addr="0xbbbb", @balance=1400000>,
- #<Account @addr="0xcccc", @balance=0>]
+[#<Account @address="0x1111", @balance=1000000>,
+ #<Account @address="0xaaaa", @balance=1200000>,
+ #<Account @address="0xbbbb", @balance=1400000>,
+ #<Account @address="0xcccc", @balance=0>]
 ```
 
-The "Genesis" `0x0000` account made a 100% profit of 1_000_000.
+The "Genesis" `0x1111` account made a 100% profit of 1_000_000.
 The `0xaaaa` account made an investment of 1_000_000 and got 1_200_000. 200_000 profit! Yes, it works!
 The `0xbbbb` account made an investment of 1_200_000 and got 1_400_000. 200_000 profit! Yes, it works!
 The `0xcccc` account is still waiting for a greater fool and is HODLing the bag.
