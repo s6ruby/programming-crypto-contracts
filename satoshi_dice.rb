@@ -28,7 +28,7 @@ class SatoshiDice < Contract
   def initialize
     @owner   = msg.sender
     @counter = 0
-    @bets    = {}   ## type mapping(uint => Bet)
+    @bets    = Mapping.of( Integer => Bet )              ## type mapping( uint => Bet )
   end
 
   def bet( cap )
