@@ -165,11 +165,11 @@ class GradualPonzi < Contract
     @investors = []    # type address[] - array of address
     @investors.push( msg.sender )
 
-    @balances = Hash.new(0)   ## type mapping( address => unit )
+    @balances = Mapping.of( Address => Integer )  # type mapping( address => unit )
   end
 
 
-  def call    ## @payable @public  (default function)
+  def process    # @payable default function
     require( msg.value >= MINIMUM_INVESTMENT )
 
     investor_share = msg.value / @investors.size
@@ -207,6 +207,7 @@ Let's setup some test accounts with funny money:
 
 ``` ruby
 ## setup test accounts with starter balance
+Account[ '0x1111' ].balance = 0
 Account[ '0xaaaa' ].balance = 1_000_000
 Account[ '0xbbbb' ].balance = 1_000_000
 Account[ '0xcccc' ].balance = 1_000_000
@@ -216,44 +217,52 @@ Account[ '0xdddd' ].balance = 1_000_000
 pp Uni.accounts      # Uni (short for) Universum
 ```
 
+(Source: [`run_ponzi_gradual.rb`](run_ponzi_gradual.rb))
+
 printing:
 
 ```
-[#<Account @addr="0xaaaa", @balance=1000000>,
- #<Account @addr="0xbbbb", @balance=1000000>,
- #<Account @addr="0xcccc", @balance=1000000>,
- #<Account @addr="0xdddd", @balance=1000000>]
+[#<Account @address="0x1111", @balance=0>,
+ #<Account @address="0xaaaa", @balance=1000000>,
+ #<Account @address="0xbbbb", @balance=1000000>,
+ #<Account @address="0xcccc", @balance=1000000>,
+ #<Account @address="0xdddd", @balance=1000000>]
 ```
 
 And let's invest:
 
 ``` ruby
+Uni.msg = { sender: '0x1111' }
 ponzi = GradualPonzi.new
+pp ponzi
+#=> #<GradualPonzi
+#       @balances={},
+#       @investors=["0x1111"]>
 
 Uni.send_transaction( from: '0xaaaa', to: ponzi, value: 1_000_000 )
 pp ponzi
 #=> #<GradualPonzi
-#      @balances={"0x0000"=>1000000},
-#      @investors=["0x0000", "0xaaaa"]>
+#      @balances={"0x1111"=>1000000},
+#      @investors=["0x1111", "0xaaaa"]>
 
 Uni.send_transaction( from: '0xbbbb', to: ponzi, value: 1_000_000 )
 pp ponzi
 #=> #<GradualPonzi
-#      @balances={"0x0000"=>1500000, "0xaaaa"=>500000},
-#      @investors=["0x0000", "0xaaaa", "0xbbbb"]>
+#      @balances={"0x1111"=>1500000, "0xaaaa"=>500000},
+#      @investors=["0x1111", "0xaaaa", "0xbbbb"]>
 
 Uni.send_transaction( from: '0xcccc', to: ponzi, value: 1_000_000 )
 pp ponzi
 #=> #<GradualPonzi
-#      @balances={"0x0000"=>1833333, "0xaaaa"=>833333, "0xbbbb"=>333333},
-#      @investors=["0x0000", "0xaaaa", "0xbbbb", "0xcccc"]>
+#      @balances={"0x1111"=>1833333, "0xaaaa"=>833333, "0xbbbb"=>333333},
+#      @investors=["0x1111", "0xaaaa", "0xbbbb", "0xcccc"]>
 
 Uni.send_transaction( from: '0xdddd', to: ponzi, value: 1_000_000 )
 pp ponzi
 #=> #<GradualPonzi
-#      @balances={"0x0000"=>2083333, "0xaaaa"=>1083333,
+#      @balances={"0x1111"=>2083333, "0xaaaa"=>1083333,
 #                 "0xbbbb"=>583333,  "0xcccc"=>250000},
-#      @investors=["0x0000", "0xaaaa", "0xbbbb", "0xcccc", "0xdddd"]>
+#      @investors=["0x1111", "0xaaaa", "0xbbbb", "0xcccc", "0xdddd"]>
 
 ## (pp) pretty print all known accounts with balance
 pp Uni.accounts
@@ -262,16 +271,17 @@ pp Uni.accounts
 Resulting in:
 
 ```
-[#<Account @addr="0xaaaa", @balance=0>,
- #<Account @addr="0xbbbb", @balance=0>,
- #<Account @addr="0xcccc", @balance=0>,
- #<Account @addr="0xdddd", @balance=0>]
+[#<Account @address="0x1111", @balance=0>,
+ #<Account @address="0xaaaa", @balance=0>,
+ #<Account @address="0xbbbb", @balance=0>,
+ #<Account @address="0xcccc", @balance=0>,
+ #<Account @address="0xdddd", @balance=0>]
 ```
 
 Note: All accounts have a balance of 0 because
 the investment (and profits) are this time safely kept in the ponzi!
 
-The "Genesis" `0x0000` account made a 100% profit of 2_083_333.
+The "Genesis" `0x1111` account made a 100% profit of 2_083_333.
 The `0xaaaa` account made an investment of 1_000_000 and got 1_083_333. 83_333 profit! Yes, it works!
 The `0xbbbb` account made an investment of 1_000_000 and got 583_333 so far. HODL! HODL!
 The `0xcccc` got 250_000 so far. HODL! HODL!
@@ -282,12 +292,12 @@ To the moon!
 Let's withdraw and pocket the profits:
 
 ``` ruby
-ponzi.send_transaction( :withdraw, from: '0xaaaa' )
+Uni.send_transaction( from: '0xaaaa', to: ponzi, data: [:withdraw] )
 pp ponzi
 #=> #<GradualPonzi
-#       @balances={"0x0000"=>2083333, "0xaaaa"=>0,
+#       @balances={"0x1111"=>2083333, "0xaaaa"=>0,
 #                  "0xbbbb"=>583333,  "0xcccc"=>250000},
-#       @investors=["0x0000", "0xaaaa", "0xbbbb", "0xcccc", "0xdddd"]>
+#       @investors=["0x1111", "0xaaaa", "0xbbbb", "0xcccc", "0xdddd"]>
 
 ## (pp) pretty print all known accounts with balance
 pp Uni.accounts
@@ -296,10 +306,11 @@ pp Uni.accounts
 resulting in:
 
 ```
-[#<Account @addr="0xaaaa", @balance=1083333>,
- #<Account @addr="0xbbbb", @balance=0>,
- #<Account @addr="0xcccc", @balance=0>,
- #<Account @addr="0xdddd", @balance=0>]
+[#<Account @address="0x1111", @balance=0>,
+ #<Account @address="0xaaaa", @balance=1083333>,
+ #<Account @address="0xbbbb", @balance=0>,
+ #<Account @address="0xcccc", @balance=0>,
+ #<Account @address="0xdddd", @balance=0>]
 ```
 
 Yes, it's real!
@@ -314,10 +325,8 @@ got already ALL the investment back with 83_333 profits!
 
 ##  Ponzi Governmental - Real World Case Study - Last Creditor (Before Collapse) Wins the Jackpot!
 
-Let's look at a real world ponzi (scheme) contract
-called Governmental
-put together
-by an Austrian School of Economics big-government fan boy or girl.
+Let's look at a real world ponzi (scheme) contract called Governmental
+put together by an Austrian School of Economics fan boy or girl.
 
 
 What's Governmental?
@@ -330,7 +339,7 @@ The gambling website says:
 > Rule 1
 >
 > You can lend the government money - they promise to pay it back +10% interest.
-> Minimum contribution is 1 Ether.
+> Minimum contribution is 1 ETH.
 >
 > Rule 2
 >
@@ -339,10 +348,10 @@ The gambling website says:
 >
 > Rule 3
 >
-> All incoming money is used in the following way: 5% goes into the "jackpot" (capped at 10k
-> Ether), 5% goes to the corrupt elite that runs the government, 90% are used to pay out
-> creditors in order of their date of credit. When the jackpot is full, 95% go toward the payout
-> of creditors.
+> All incoming money is used in the following way: 5% goes into the "jackpot" (capped at 10 000 ETH), 
+> 5% goes to the corrupt elite that runs the government, 
+> 90% are used to pay out creditors in order of their date of credit. 
+> When the jackpot is full, 95% go toward the payout of creditors.
 >
 > Rule 4
 >
@@ -388,7 +397,8 @@ contract Government {
 
     function lendGovernmentMoney(address buddy) returns (bool) {
         uint amount = msg.value;
-        // check if the system already broke down. If for 12h no new creditor gives new credit to the system it will brake down.
+        // check if the system already broke down. 
+        // If for 12h no new creditor gives new credit to the system it will brake down.
         // 12h are on average = 60*60*12/12.5 = 3456
         if (lastTimeOfNewCredit + TWELVE_HOURS < block.timestamp) {
             // Return money to sender
@@ -416,7 +426,8 @@ contract Government {
                 // now the money is distributed
                 // first the corrupt elite grabs 5% - thieves!
                 corruptElite.send(amount * 5/100);
-                // 5% are going into the economy (they will increase the value for the person seeing the crash comming)
+                // 5% are going into the economy 
+                //  (they will increase the value for the person seeing the crash comming)
                 if (profitFromCrash < 10000 * 10**18) {
                     profitFromCrash += amount * 5/100;
                 }
@@ -472,7 +483,7 @@ contract Government {
 }
 ```
 
-Let's convert the contract code ruby and run it to decipher (and understand) the magic money machine!
+Let's convert the contract code to ruby and run it to decipher (and understand) the magic money machine!
 
 ``` ruby
 class Governmental < Contract
@@ -498,7 +509,8 @@ class Governmental < Contract
   def lend_government_money( buddy )
     amount = msg.value
 
-    ## check if the system already broke down. If for 12h no new creditor gives new credit to the system it will brake down.
+    ## check if the system already broke down. 
+    ## If for 12h no new creditor gives new credit to the system it will brake down.
     ## 12h are on average = 12h*60min*60secs/12.5 = 3456 blocks
     if @last_time_of_new_credit + TWELVE_HOURS < block.timestamp
       ## Return money to sender
@@ -589,6 +601,9 @@ class Governmental < Contract
 end   # class Governmental
 ```
 
+(Source: [`ponzi_governmental.rb`](ponzi_governmental.rb))
+
+
 Now doesn't the new contract script look better, that is, more understandable?
 Let's go through the
 state (storage) variables setup in the constructor:
@@ -636,15 +651,18 @@ Account[ '0xeeee' ].balance = 1_000_000
 pp Uni.accounts
 ```
 
+(Source: [`run_ponzi_governmental.rb`](run_ponzi_governmental.rb))
+
+
 resulting in:
 
 ```
-[#<Account:0x4db81e0 @address="0x1111", @balance=1000000>,
- #<Account:0x4db8198 @address="0xaaaa", @balance=1000000>,
- #<Account:0x4db8150 @address="0xbbbb", @balance=1000000>,
- #<Account:0x4db8108 @address="0xcccc", @balance=1000000>,
- #<Account:0x4db80a8 @address="0xdddd", @balance=1000000>,
- #<Account:0x4db8060 @address="0xeeee", @balance=1000000>]
+[#<Account @address="0x1111", @balance=1000000>,
+ #<Account @address="0xaaaa", @balance=1000000>,
+ #<Account @address="0xbbbb", @balance=1000000>,
+ #<Account @address="0xcccc", @balance=1000000>,
+ #<Account @address="0xdddd", @balance=1000000>,
+ #<Account @address="0xeeee", @balance=1000000>]
 ```
 
 Let's start-up the contract with a 1 million seed jackpot!
@@ -659,16 +677,16 @@ pp gov
 resulting in:
 
 ```
-#<Governmental:0x4e22ad0
- @balance=1000000,
- @buddies={},
- @corrupt_elite="0x1111",
- @creditor_addresses=[],
- @creditor_amounts=[],
- @last_creditor_paid_out=0,
- @last_time_of_new_credit=1548880299,
- @profit_from_crash=1000000,
- @round=0>
+#<Governmental
+   @balance=1000000,
+   @buddies={},
+   @corrupt_elite="0x1111",
+   @creditor_addresses=[],
+   @creditor_amounts=[],
+   @last_creditor_paid_out=0,
+   @last_time_of_new_credit=1548880299,
+   @profit_from_crash=1000000,
+   @round=0>
 ```
 
 Now let's add the first four investments:
@@ -691,22 +709,22 @@ resulting in:
 
 ```
 ...
-#<Governmental:0x4e22ad0
- @balance=1450000,
- @buddies={"0xaaaa"=>0, "0xbbbb"=>0, "0xcccc"=>0, "0xdddd"=>1100000},
- @corrupt_elite="0x1111",
- @creditor_addresses=["0xaaaa", "0xbbbb", "0xcccc", "0xdddd"],
- @creditor_amounts=[1100000, 1100000, 1100000, 1100000],
- @last_creditor_paid_out=3,
- @last_time_of_new_credit=1548880299,
- @profit_from_crash=1200000,
- @round=0>
-[#<Account:0x4db81e0 @address="0x1111", @balance=200000>,
- #<Account:0x4db8198 @address="0xaaaa", @balance=1150000>,
- #<Account:0x4db8150 @address="0xbbbb", @balance=1100000>,
- #<Account:0x4db8108 @address="0xcccc", @balance=1100000>,
- #<Account:0x4db80a8 @address="0xdddd", @balance=0>,
- #<Account:0x4db8060 @address="0xeeee", @balance=1000000>]
+#<Governmental
+    @balance=1450000,
+    @buddies={"0xaaaa"=>0, "0xbbbb"=>0, "0xcccc"=>0, "0xdddd"=>1100000},
+    @corrupt_elite="0x1111",
+    @creditor_addresses=["0xaaaa", "0xbbbb", "0xcccc", "0xdddd"],
+    @creditor_amounts=[1100000, 1100000, 1100000, 1100000],
+    @last_creditor_paid_out=3,
+    @last_time_of_new_credit=1548880299,
+    @profit_from_crash=1200000,
+    @round=0>
+[#<Account @address="0x1111", @balance=200000>,
+ #<Account @address="0xaaaa", @balance=1150000>,
+ #<Account @address="0xbbbb", @balance=1100000>,
+ #<Account @address="0xcccc", @balance=1100000>,
+ #<Account @address="0xdddd", @balance=0>,
+ #<Account @address="0xeeee", @balance=1000000>]
 ```
 
 It's working!
@@ -740,25 +758,25 @@ pp Uni.accounts
 resulting in:
 
 ```
-#<Governmental:0x4e22ad0
- @balance=0,
- @buddies={"0xaaaa"=>0, "0xbbbb"=>0, "0xcccc"=>0, "0xdddd"=>1100000},
- @corrupt_elite="0x1111",
- @creditor_addresses=[],
- @creditor_amounts=[],
- @last_creditor_paid_out=0,
- @last_time_of_new_credit=1548927099,
- @profit_from_crash=0,
- @round=1>
-[#<Account:0x4db81e0 @address="0x1111", @balance=450000>,
- #<Account:0x4db8198 @address="0xaaaa", @balance=1150000>,
- #<Account:0x4db8150 @address="0xbbbb", @balance=1100000>,
- #<Account:0x4db8108 @address="0xcccc", @balance=1100000>,
- #<Account:0x4db80a8 @address="0xdddd", @balance=1200000>,
- #<Account:0x4db8060 @address="0xeeee", @balance=1000000>]
+#<Governmental
+    @balance=0,
+    @buddies={"0xaaaa"=>0, "0xbbbb"=>0, "0xcccc"=>0, "0xdddd"=>1100000},
+    @corrupt_elite="0x1111",
+    @creditor_addresses=[],
+    @creditor_amounts=[],
+    @last_creditor_paid_out=0,
+    @last_time_of_new_credit=1548927099,
+    @profit_from_crash=0,
+    @round=1>
+[#<Account @address="0x1111", @balance=450000>,
+ #<Account @address="0xaaaa", @balance=1150000>,
+ #<Account @address="0xbbbb", @balance=1100000>,
+ #<Account @address="0xcccc", @balance=1100000>,
+ #<Account @address="0xdddd", @balance=1200000>,
+ #<Account @address="0xeeee", @balance=1000000>]
 ```
 
-Not bad. Everyone wins! EXCEPT the corrupt elite -
+Not bad. EVERYONE WINS! Except the corrupt elite -
 only getting back 450_000 for the 1_000_000 seed investment.
 
 
