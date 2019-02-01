@@ -18,9 +18,9 @@
 
 class Governmental < Contract
 
-  MINIMUM_INVESTMENT = 1_000_000   # unit   # use 1e15 - why? why not?
+  MINIMUM_INVESTMENT = 1_000_000 
 
-  TWELVE_HOURS = 43_200    ## in seconds e.g. 12h*60min*60secs
+  TWELVE_HOURS       = 43_200        ## in seconds e.g. 12h*60min*60secs
 
 
   def initialize
@@ -30,12 +30,12 @@ class Governmental < Contract
     @corrupt_elite           = msg.sender       ## type address public
     @last_time_of_new_credit = block.timestamp  ## type uint public
 
-    @creditor_addresses = []    ## type address[] public
-    @creditor_amounts   = []    ## type uint[] public
-    @buddies = Hash.new(0)      ## type mapping (address => uint) buddies
+    @creditor_addresses = []                    ## type address[] public
+    @creditor_amounts   = []                    ## type uint[] public
+    @buddies = Mapping.of( Address => Integer ) ## type mapping (address => uint) buddies
 
-    @round = 0                   ## type uint8 public
-    @last_creditor_paid_out = 0  ## type uint32 public
+    @round = 0                                  ## type uint8 public
+    @last_creditor_paid_out = 0                 ## type uint32 public
 
     ## todo/fix: add/sub value "by hand" from/to balance for now in constructor (make auto-matic!!!)
     _add( msg.value )
@@ -53,7 +53,7 @@ class Governmental < Contract
       msg.sender.send( amount )
       ## Sends all contract money to the last creditor
       @creditor_addresses[ @creditor_addresses.length-1].send( @profit_from_crash )
-      @corrupt_elite.send( @balance )
+      @corrupt_elite.send( balance )
       ## Reset contract state
       @last_creditor_paid_out = 0
       @last_time_of_new_credit = block.timestamp
@@ -90,7 +90,7 @@ class Governmental < Contract
         @buddies[ msg.sender ] += amount * 110 / 100
 
         ## 90% of the money will be used to pay out old creditors
-        if @creditor_amounts[ @last_creditor_paid_out] <= @balance - @profit_from_crash
+        if @creditor_amounts[ @last_creditor_paid_out] <= balance - @profit_from_crash
           @creditor_addresses[ @last_creditor_paid_out ].send( @creditor_amounts[@last_creditor_paid_out] )
 
           @buddies[ @creditor_addresses[ @last_creditor_paid_out ]] = 0
