@@ -55,7 +55,9 @@ module Address
 end  # class Address
 
 
-class Bool; end   ## add dummy bool class for mapping
+class Bool; end   ## add dummy bool class for mapping and (payable) method signature
+class Money; end 
+class Void; end
 
 
 class Mapping
@@ -197,21 +199,32 @@ class Contract
   #  account (builtin) services / transaction methods
   include Address    ## includes address + send/transfer/balance
 
+  ## function sig(nature) macro for types (dummy for now)
+  # e.g. use like
+  #   payable :process
+  #   payable :initialize
+  #   payable :bet, Integer
+  #   payable :lend_money, Address => Bool   ## returns Bool
+  def self.payable( *args ); end
 
+  payable :process
+
+  ####
+  #  todo/double check: auto-add payable default fallback - why? why not? 
   def process    ## @payable default fallback
   end
 
 
-  def assert( cond )
-    if cond == true
+  def assert( condition )
+    if condition == true
       ## do nothing
     else
       raise 'Contract Assertion Failed; Contract Halted (Stopped)'
     end
   end
 
-  def require( cond )
-    if cond == true
+  def require( condition )
+    if condition == true
       ## do nothing
     else
       raise 'Contract Require Condition Failed; Contract Halted (Stopped)'
