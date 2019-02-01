@@ -106,7 +106,7 @@ class Governmental < Contract
 
 
   def process
-    lend_government_money( 0 )   ## sorry - no buddy (e.g. 0) in government gets 5% "referral" fee
+    lend_government_money( '0x0000' )   ## sorry - no buddy (e.g. '0x0000') in government gets 5% "referral" fee
   end
 
 
