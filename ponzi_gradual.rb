@@ -12,17 +12,17 @@
 
 class GradualPonzi < Contract
 
-  MINIMUM_INVESTMENT = 1_000_000  # unit   # use 1e15 - why? why not?
+  MINIMUM_INVESTMENT = 1_000_000
 
   def initialize
-    @investors = []    # type address[] - array of address
+    @investors = []                                # type address[] - array of address
     @investors.push( msg.sender )
 
-    @balances = Hash.new(0)   ## type mapping( address => unit )
+    @balances = Mapping.of( Address => Integer )   # type mapping( address => unit )
   end
 
 
-  def process    ## @payable default function
+  def process    # @payable default function
     require( msg.value >= MINIMUM_INVESTMENT )
 
     investor_share = msg.value / @investors.size
@@ -39,6 +39,5 @@ class GradualPonzi < Contract
     @balances[msg.sender] = 0
     msg.sender.transfer( payout )
   end
-
 
 end # class GradualPonzi
