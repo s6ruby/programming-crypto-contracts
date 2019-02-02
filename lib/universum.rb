@@ -10,6 +10,8 @@ end
 
 
 module Address
+  def self.zero() '0x0000'; end
+
   def address
     if @address
       @address
@@ -55,9 +57,22 @@ module Address
 end  # class Address
 
 
-class Bool; end   ## add dummy bool class for mapping and (payable) method signature
-class Money; end 
-class Void; end
+## add dummy bool class for mapping and (payable) method signature
+
+class Integer
+  def self.zero() 0; end
+end
+
+class Bool
+  def self.zero() false; end
+end
+
+class Money
+  def self.zero() 0; end
+end
+
+class Void   ## only used (reserved) for (payable) method signature now
+end
 
 
 class Mapping
@@ -68,12 +83,15 @@ class Mapping
      if args[0].is_a? Hash
        arg = args[0].to_a   ## convert to array (for easier access)
        if arg[0][1] == Integer
-         Hash.new( 0 )     ## if key missing returns 0 and NOT nil (the default)
+         Hash.new( Integer.zero )     ## if key missing returns 0 and NOT nil (the default)
+       elsif arg[0][1] == Money
+         Hash.new( Money.zero )     ## if key missing returns 0 and NOT nil (the default)
        elsif arg[0][1] == Bool
-         Hash.new( false )
+         Hash.new( Bool.zero )
        elsif arg[0][1] == Address
-         Hash.new( '0x0000' )
+         Hash.new( Address.zero )
        else   ## assume "standard" defaults
+         ## todo: issue warning about unknown type - why? why not?
          Hash.new
        end
      else
@@ -81,6 +99,9 @@ class Mapping
      end
   end
 end
+
+
+
 
 class Array
   def self.of( *args )
@@ -123,7 +144,12 @@ end
 class Account
 
   @@directory = {}
-  def self.find_by_address( key ) @@directory[ key ]; end
+  def self.find_by_address( key )
+     ## clean key (allow "embedded" name e.g 0x1111 (Alice))
+     key = key.gsub(/\(.+\)/, '' ).strip
+     @@directory[ key ]
+  end
+  def self.find( key ) find_by_address( key ); end   # make find_by_address the default finder
 
   def self.[]( key )
     o = find_by_address( key )
@@ -153,13 +179,17 @@ class Account
     @balance = value
   end
 
+  attr_reader :tx
+  def _auto_inc_tx() @tx += 1; end   ## "internal" method - (auto) increment transaction (tx) counter
+
   ## note: needed by transfer/send
   def this()       Universum.this;         end   ## returns current contract
 
 private
-  def initialize( address, balance: 0 )
+  def initialize( address, balance: 0, tx: 0 )
     @address = address    # type address - (hex) string starts with 0x
     @balance = balance    # uint
+    @tx      = tx         # transaction (tx) count (used for nonce and replay attack protection)
   end
 
 end # class Account
@@ -195,6 +225,21 @@ end  # class Event
 
 
 class Contract
+
+  @@directory = {}
+  def self.find_by_address( key )
+     ## clean key (allow "embedded" class name e.g 0x4de2ee8 (SatoshiDice))
+     key = key.gsub(/\(.+\)/, '' ).strip
+     @@directory[ key ];
+  end
+  def self.find( key ) find_by_address( key ); end   # make find_by_address the default finder
+  def self.[]( key ) find_by_address( key ); end
+
+  def self.store( key, o ) @@directory.store( key, o ); end  ## store (add) new contract object (o) to hash / directory
+  def self.all() @@directory.values; end
+
+
+
   ####
   #  account (builtin) services / transaction methods
   include Address    ## includes address + send/transfer/balance
@@ -207,11 +252,11 @@ class Contract
   #   payable :lend_money, Address => Bool   ## returns Bool
   def self.payable( *args ); end
 
-  payable :process
+  payable :receive
 
   ####
-  #  todo/double check: auto-add payable default fallback - why? why not? 
-  def process    ## @payable default fallback
+  #  todo/double check: auto-add payable default fallback - why? why not?
+  def receive    ## @payable default fallback - use different name - why? why not? (e.g. handle/process/etc.)
   end
 
 
@@ -223,6 +268,9 @@ class Contract
     end
   end
 
+
+=begin
+## note: for now always use assert (avoid duplication/confusion)
   def require( condition )
     if condition == true
       ## do nothing
@@ -230,6 +278,8 @@ class Contract
       raise 'Contract Require Condition Failed; Contract Halted (Stopped)'
     end
   end
+=end
+
 
   def this()       Universum.this;         end   ## returns current contract
   def log( event ) Universum.log( event ); end
@@ -250,6 +300,7 @@ private
   end
 
 end  # class Contract
+
 
 
 
@@ -277,30 +328,58 @@ class Block
 end  # class Block
 
 
+class Receipt   ## transaction receipt
+
+   ## required attributes / fields
+   attr_reader :nonce, :from, :to, :value,
+               :block_number, :block_timestamp
+   ## optional
+   attr_reader :contract_address
+
+   def initialize( nonce:, from:, to:, value:,
+                   block:,
+                   contract: nil )
+      @nonce = nonce
+      @from  = from
+      @to    = to.is_a?( Contract ) ? "#{to.address} (#{to.class.name})" : to
+      @value = value
+      ## todo/fix: add data too!!!
+
+      @block_number    = block.number
+      @block_timestamp = block.timestamp
+
+      if contract
+        ## note: for easier debugging add class name in () to address (needs to get stripped away in lookup)
+        @contract_address = "#{contract.address} (#{contract.class.name})"
+      else
+        @contract_address = nil
+      end
+   end
+
+   def contract   # convenience helper (quick contract lookup)
+     if @contract_address
+       Contract.find( @contract_address )
+     else
+       nil
+     end
+   end
+end
+
 
 
 class Universum   ## Uni short for Universum
   ## convenience helpers
 
 
-  def self.send_transaction( from:, to:, value: 0, data: [] )
-    ## transaction counter 1,2,3,etc. (sometimes called nounce too)
-    @@counter ||= 0
-    @@counter += 1       ## start with 0 or 1 (for now starting with 1 - why? why not?)
-
-    if value > 0
-      account = Account[from]
-
-      ## move value to msg (todo/fix: restore if exception)
-      account._sub( value )  # (sub)tract / debit from the sender (account)
-      to._add( value )       # add / credit to the recipient
-    end
+  def self.send_transaction( from:, to: '0x0000', value: 0, data: [] )
+    counter = @@counter ||= 0    ## total tx counter for debugging (start with 0)
+    @@counter += 1
 
 
-    ## setup contract msg context
-    self.msg = { sender: from, value: value }
+    account = Account.find( from )
 
-    self.this = to    ## assumes for now that to is always a contract (and NOT an account)!!!
+    nonce = account.tx   ## get transaction (tx) counter (starts with 0)
+    account._auto_inc_tx
 
     ## for debug add transaction (tx) args (e.g. from, value, etc.)
     tx_args_debug = { from: from }
@@ -310,26 +389,68 @@ class Universum   ## Uni short for Universum
     tx_args_debug_str = tx_args_debug.reduce( [] ) { |ary,(k,v)| ary; ary << "#{k}: #{v.inspect}" }.join( ', ' )
 
 
-    if data.empty?  ## assume process (default method) for now
-      puts "** tx ##{@@counter} (block ##{block.number}): #{tx_args_debug_str} => to: #{to.class.name} default function"
-      to.process()
-    else   ## assume method name
-      m    = data[0]       ## method name / signature
-      args = data[1..-1]   ## arguments
+    ## setup contract msg context
+    self.msg = { sender: from, value: value }
 
+    if to == '0x0000'  ## special case - contract creation transaction
+      if data.is_a? Class
+        klass = data     ## allow shortcut for Class (without ctor arguments)
+        args  = []
+      else  ## assume array
+        klass = data[0]       ## contract class - todo/fix: check if data[] is a contract class!!!
+        args  = data[1..-1]   ## arguments
+      end
       ## convert all args to string (with inspect) for debugging
       ##   check if pretty_inspect adds trailing newline? why? why not? possible?
       args_debug = args.reduce( [] ) { |ary,arg| ary; ary << arg.inspect }.join( ', ' )
-      puts "** tx ##{@@counter} (block ##{block.number}): #{tx_args_debug_str} => to: #{to.class.name} #{m}( #{args_debug} )"
+      puts "** tx ##{counter} (block ##{block.number}): #{tx_args_debug_str} => to: #{to.inspect} create contract #{klass.name}.new( #{args_debug} )"
+      contract = klass.new( *args )   ## note: balance and this (and msg.send/transfer) NOT available/possible !!!!
 
-      to.__send__( m, *args )    ## note: use __send__ to avoid clash with send( value ) for sending payments!!!
+      if value > 0
+        ## move value to msg (todo/fix: restore if exception)
+        account._sub( value )  # (sub)tract / debit from the sender (account)
+        contract._add( value )        # add / credit to the recipient
+      end
+
+      puts " new #{contract.class.name} contract adddress: #{contract.address.inspect}"
+      ## add new contract to (lookup) directory
+      Contract.store( contract.address, contract )
+
+      ## return transaction receipt
+      Receipt.new( nonce: nonce, from: from, to: to, value: value,
+                      block: block,
+                      contract: contract )
+    else
+
+       if value > 0
+         ## move value to msg (todo/fix: restore if exception)
+         account._sub( value )  # (sub)tract / debit from the sender (account)
+         to._add( value )       # add / credit to the recipient
+       end
+
+       self.this = to    ## assumes for now that to is always a contract (and NOT an account)!!!
+
+       data = [:receive]   if data.empty?  ## assume receive (default method) for now if data empty (no method specified)
+
+       m    = data[0]       ## method name / signature
+       args = data[1..-1]   ## arguments
+
+       ## convert all args to string (with inspect) for debugging
+       ##   check if pretty_inspect adds trailing newline? why? why not? possible?
+       args_debug = args.reduce( [] ) { |ary,arg| ary; ary << arg.inspect }.join( ', ' )
+       puts "** tx ##{counter} (block ##{block.number}): #{tx_args_debug_str} => to: #{to.class.name}.#{m}( #{args_debug} )"
+
+       to.__send__( m, *args )    ## note: use __send__ to avoid clash with send( value ) for sending payments!!!
+
+       ## return transaction receipt
+       Receipt.new( nonce: nonce, from: from, to: to, value: value,
+                       block: block )
     end
   end
 
 
-  def self.accounts
-    accounts = Account.all
-  end
+  def self.accounts()  Account.all; end
+  def self.contracts() Contract.all; end
 
 
   def self.msg
@@ -382,6 +503,7 @@ class Universum   ## Uni short for Universum
     handlers.each { |h| h.call( event ) }
   end
 end  ## class Universum
+
 
 
 Uni = Universum   ## add some convenience aliases (still undecided what's the most popular :-)
