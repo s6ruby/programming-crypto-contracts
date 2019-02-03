@@ -170,7 +170,7 @@ class GradualPonzi < Contract
 
 
   def receive
-    require( msg.value >= MINIMUM_INVESTMENT )
+    assert( msg.value >= MINIMUM_INVESTMENT )
 
     investor_share = msg.value / @investors.size
     @investors.each do |investor|
