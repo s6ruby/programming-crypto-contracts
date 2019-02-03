@@ -1,6 +1,7 @@
 # encoding: utf-8
 
-require_relative './lib/universum'
+require 'universum'
+
 require_relative './ponzi_governmental'
 
 
@@ -18,9 +19,8 @@ Account[ '0xeeee' ].balance = 1_000_000
 ## (pp) pretty print all known accounts with balance
 pp Uni.accounts
 
-## genesis (founder)
-Uni.msg = { sender: '0x1111', value: 1_000_000 }
-gov = Governmental.new
+## genesis - create contract
+gov = Uni.send_transaction( from: '0x1111', value: 1_000_000, data: Governmental ).contract
 pp gov
 
 Uni.send_transaction( from: '0xaaaa', to: gov, value: 1_000_000 )

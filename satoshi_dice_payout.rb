@@ -1,9 +1,9 @@
 
 
+## Fee (Casino House Edge) is 1.9%, that is, 19 / 1000
+FEE_NUMERATOR   = 19
+FEE_DENOMINATOR = 1000
 
-## Fee is 1 / 100  (that is 0.01 or 1%)
-FEE_NUMERATOR   = 1
-FEE_DENOMINATOR = 100
 
 MAXIMUM_CAP = 2**16   # 65_536 = 2^16 = 2 byte/16 bit
 

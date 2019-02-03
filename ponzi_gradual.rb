@@ -18,12 +18,12 @@ class GradualPonzi < Contract
     @investors = []                                # type address[] - array of address
     @investors.push( msg.sender )
 
-    @balances = Mapping.of( Address => Integer )   # type mapping( address => unit )
+    @balances = Mapping.of( Address => Money )     # type mapping( address => unit )
   end
 
 
-  def process    # @payable default function
-    require( msg.value >= MINIMUM_INVESTMENT )
+  def receive    # @payable default function
+    assert( msg.value >= MINIMUM_INVESTMENT )
 
     investor_share = msg.value / @investors.size
     @investors.each do |investor|

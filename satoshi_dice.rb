@@ -21,8 +21,8 @@ class SatoshiDice < Contract
   MAXIMUM_BET = 100_000_000
   MINIMUM_BET = 100
 
-  BetPlaced = Event.create( :id, :user, :cap, :amount )  ## type uint id, address user, uint cap, uint amount
-  Roll      = Event.create( :id, :rolled )               ## type uint id, uint rolled
+  BetPlaced = Event.new( :id, :user, :cap, :amount )  ## type uint id, address user, uint cap, uint amount
+  Roll      = Event.new( :id, :rolled )               ## type uint id, uint rolled
 
 
   def initialize
@@ -32,8 +32,8 @@ class SatoshiDice < Contract
   end
 
   def bet( cap )
-     require( cap >= 1 && cap <= MAXIMUM_CAP )
-     require( msg.value >= MINIMUM_BET && msg.value <= MAXIMUM_BET )
+     assert( cap >= 1 && cap <= MAXIMUM_CAP )
+     assert( msg.value >= MINIMUM_BET && msg.value <= MAXIMUM_BET )
 
      @counter += 1
      @bets[@counter] = Bet.new( msg.sender, block.number+3, cap, msg.value )
@@ -43,9 +43,9 @@ class SatoshiDice < Contract
   def roll( id )
     bet = @bets[id]
 
-    require( msg.sender == bet.user )
-    require( block.number >= bet.block )
-    require( block.number <= bet.block + 255 )
+    assert( msg.sender == bet.user )
+    assert( block.number >= bet.block )
+    assert( block.number <= bet.block + 255 )
 
     ## "provable" fair - random number depends on
     ##  - blockhash (of block in the future - t+3)
@@ -69,11 +69,11 @@ class SatoshiDice < Contract
     @bets.delete( id )
   end
 
-  def fund    # @payable
+  def fund
   end
 
   def kill
-    require( msg.sender == @owner )
+    assert( msg.sender == @owner )
     selfdestruct( @owner )
   end
 end

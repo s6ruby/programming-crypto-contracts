@@ -14,7 +14,7 @@ class SimplePyramid < Contract
   MINIMUM_INVESTMENT = 1_000_000
 
   def initialize
-    require( msg.value >= MINIMUM_INVESTMENT )
+    assert( msg.value >= MINIMUM_INVESTMENT )
 
     @depth       = 1   # current depth / pyramid level
     @next_payout = 3   # start first payout with 3 investors (1 / 2,3) on depth+1 (e.g. 2nd) level
@@ -22,12 +22,12 @@ class SimplePyramid < Contract
     @investors = []    # type address[] - array of address
     @investors.push( msg.sender )
 
-    @balances = Mapping.of( Address => Integer )   # hash mapping with default value 0
+    @balances = Mapping.of( Address => Money )   # hash mapping with default value 0
     @balances[ address ] = msg.value
   end
 
-  def process   # @payable
-    require( msg.value >= MINIMUM_INVESTMENT )
+  def receive   # @payable
+    assert( msg.value >= MINIMUM_INVESTMENT )
     @balances[ address ] += msg.value
 
     @investors.push( msg.sender )

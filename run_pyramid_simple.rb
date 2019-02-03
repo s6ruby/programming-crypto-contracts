@@ -1,6 +1,7 @@
 # encoding: utf-8
 
-require_relative './lib/universum'
+require 'universum'
+
 require_relative './pyramid_simple'
 
 
@@ -21,9 +22,8 @@ Account[ '0xcc22' ].balance = 1_000_000
 ## pretty print (pp) all known accounts with balance
 pp Uni.accounts
 
-## genesis (founder)
-Uni.msg = { sender: '0x1111', value: 1_000_000 }
-pyramid = SimplePyramid.new
+## genesis - create contract
+pyramid = Uni.send_transaction( from: '0x1111', value: 1_000_000, data: SimplePyramid ).contract
 pp pyramid
 
 ## level 1

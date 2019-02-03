@@ -16,10 +16,10 @@ class SimplePonzi < Contract
     @current_investment = 0            # type uint
   end
 
-  def process    ## @payable default function
+  def receive    ## @payable default function
     # note: new investments must be 10% greater than current
     minimum_investment = @current_investment * 11/10
-    require( msg.value > minimum_investment )
+    assert( msg.value > minimum_investment )
 
     # record new investor
     previous_investor   = @current_investor

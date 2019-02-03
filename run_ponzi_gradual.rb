@@ -1,6 +1,7 @@
 # encoding: utf-8
 
-require_relative './lib/universum'
+require 'universum'
+
 require_relative './ponzi_gradual'
 
 
@@ -17,10 +18,9 @@ Account[ '0xdddd' ].balance = 1_000_000
 ## pretty print (pp) all known accounts with balance
 pp Uni.accounts
 
-
-Uni.msg = { sender: '0x1111' }
-ponzi = GradualPonzi.new
-pp
+## genesis - create contract
+ponzi = Uni.send_transaction( from: '0x1111', data: GradualPonzi ).contract
+pp ponzi
 
 Uni.send_transaction( from: '0xaaaa', to: ponzi, value: 1_000_000 )
 pp ponzi

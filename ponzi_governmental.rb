@@ -18,7 +18,7 @@
 
 class Governmental < Contract
 
-  MINIMUM_INVESTMENT = 1_000_000 
+  MINIMUM_INVESTMENT = 1_000_000
 
   TWELVE_HOURS       = 43_200        ## in seconds e.g. 12h*60min*60secs
 
@@ -32,14 +32,10 @@ class Governmental < Contract
 
     @creditor_addresses = []                    ## type address[] public
     @creditor_amounts   = []                    ## type uint[] public
-    @buddies = Mapping.of( Address => Integer ) ## type mapping (address => uint) buddies
+    @buddies = Mapping.of( Address => Money )   ## type mapping (address => uint) buddies
 
     @round = 0                                  ## type uint8 public
     @last_creditor_paid_out = 0                 ## type uint32 public
-
-    ## todo/fix: add/sub value "by hand" from/to balance for now in constructor (make auto-matic!!!)
-    _add( msg.value )
-    msg.sender._sub( msg.value )
   end
 
 
@@ -105,7 +101,7 @@ class Governmental < Contract
   end # method lend_government_money
 
 
-  def process
+  def receive
     lend_government_money( '0x0000' )   ## sorry - no buddy (e.g. '0x0000') in government gets 5% "referral" fee
   end
 
