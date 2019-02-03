@@ -20,17 +20,15 @@ Let's start with a simple ponzi scheme contract:
 ``` ruby
 class SimplePonzi < Contract
 
-  payable :process
-
   def initialize
     @current_investor   = msg.sender
     @current_investment = 0
   end
 
-  def process
+  def receive
     # note: new investments must be 10% greater than current
     minimum_investment = @current_investment * 11 / 10
-    require( msg.value > minimum_investment )
+    assert( msg.value > minimum_investment )
 
     # record new investor
     previous_investor   = @current_investor
@@ -114,8 +112,8 @@ Note: The contract scripts run on Universum - a 3rd generation blockchain / worl
 And let's invest:
 
 ``` ruby
-Uni.msg = { sender: '0x1111' }
-ponzi = SimplePonzi.new
+## genesis - create contract
+ponzi = Uni.send_transaction( from: '0x1111', data: SimplePonzi ).contract
 pp ponzi
 #=> #<SimplePonzi @current_investment=0, @current_investor="0x1111">
 
@@ -161,8 +159,6 @@ as more investors join in:
 ``` ruby
 class GradualPonzi < Contract
 
-  payable :process
-
   MINIMUM_INVESTMENT = 1_000_000
 
   def initialize
@@ -173,7 +169,7 @@ class GradualPonzi < Contract
   end
 
 
-  def process
+  def receive
     require( msg.value >= MINIMUM_INVESTMENT )
 
     investor_share = msg.value / @investors.size
@@ -236,8 +232,8 @@ printing:
 And let's invest:
 
 ``` ruby
-Uni.msg = { sender: '0x1111' }
-ponzi = GradualPonzi.new
+## genesis - create contract
+ponzi = Uni.send_transaction( from: '0x1111', data: GradualPonzi ).contract
 pp ponzi
 #=> #<GradualPonzi
 #       @balances={},
@@ -494,7 +490,6 @@ class Governmental < Contract
 
   payable :initialize
   payable :lend_government_money, Address => Bool
-  payable :process
   payable :invest_in_the_system
 
   MINIMUM_INVESTMENT = 1_000_000
@@ -576,7 +571,7 @@ class Governmental < Contract
     end
   end # method lend_government_money
 
-  def process
+  def receive
     lend_government_money( '0x0000' )
   end
 
@@ -677,9 +672,8 @@ resulting in:
 Let's start-up the contract with a 1 million seed jackpot!
 
 ``` ruby
-## genesis (founder)
-Uni.msg = { sender: '0x1111', value: 1_000_000 }
-gov = Governmental.new
+## genesis - create contract
+gov = Uni.send_transaction( from: '0x1111', value: 1_000_000, data: Governmental ).contract
 pp gov
 ```
 
