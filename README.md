@@ -785,3 +785,10 @@ only getting back 450_000 for the 1_000_000 seed investment.
 
 
 To be continued...
+
+
+
+
+---
+
+For more blockchain books, see the new [**Best of Crypto Books page »**](https://openblockchains.github.io/crypto-books/)
