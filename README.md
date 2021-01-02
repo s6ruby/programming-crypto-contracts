@@ -1,4 +1,9 @@
 
+For more blockchain books, see the [**Best of Crypto Books page »**](https://openblockchains.github.io/crypto-books/)
+
+---
+
+
 # Programming Crypto Blockchain Contracts Step-by-Step Book / Guide
 
 _Let's Start with Ponzi & Pyramid Schemes. Run Your Own Lotteries, Gambling Casinos and more on the Blockchain World Computer..._
@@ -788,7 +793,3 @@ To be continued...
 
 
 
-
----
-
-For more blockchain books, see the new [**Best of Crypto Books page »**](https://openblockchains.github.io/crypto-books/)
